@@ -1,16 +1,172 @@
 const puppeteer = require("puppeteer-core");
 const GoLogin = require("gologin");
-
+const { fillPayNewForm, openSettings } = require("./functions/pa.google.com");
+const { addNewAdsAccount } = require("./functions/ads.google.com");
+console.log(fillPayNewForm);
+// ----------------------------------------------------
 (async () => {
-    const card = {
-        number: "1234567812345678",
-        date1: "11",
-        date2: "25",
-        cvc: "123",
-        address: "some street 1",
-        city: "some city",
-        province: "",
-    };
+    const card = [
+        {
+            number: "5534567812345678",
+            date1: "11",
+            date2: "25",
+            cvc: "123",
+            address: "some street 1",
+            city: "some city",
+            province: "",
+            name: "cardholder name",
+        },
+        {
+            number: "5168370830065300",
+            date1: "06",
+            date2: "23",
+            cvc: "743",
+            address: "some street 1",
+            city: "some city",
+            province: "",
+            name: "cardholder name",
+        },
+        {
+            number: "4895046744827133",
+            date1: "04",
+            date2: "23",
+            cvc: "370",
+            address: "some street 1",
+            city: "some city",
+            province: "",
+            name: "cardholder name",
+        },
+        {
+            number: "4895048807034631",
+            date1: "07",
+            date2: "25",
+            cvc: "803",
+            address: "some street 1",
+            city: "some city",
+            province: "",
+            name: "cardholder name",
+        },
+        {
+            number: "4895045788618663",
+            date1: "10",
+            date2: "26",
+            cvc: "030",
+            address: "some street 1",
+            city: "some city",
+            province: "",
+            name: "cardholder name",
+        },
+        {
+            number: "4895040082351061",
+            date1: "02",
+            date2: "26",
+            cvc: "263",
+            address: "some street 1",
+            city: "some city",
+            province: "",
+            name: "cardholder name",
+        },
+        {
+            number: "4895042676348230",
+            date1: "05",
+            date2: "26",
+            cvc: "464",
+            address: "some street 1",
+            city: "some city",
+            province: "",
+            name: "cardholder name",
+        },
+        {
+            number: "4895047455211723",
+            date1: "10",
+            date2: "23",
+            cvc: "707",
+            address: "some street 1",
+            city: "some city",
+            province: "",
+            name: "cardholder name",
+        },
+        {
+            number: "4895048677583154",
+            date1: "04",
+            date2: "25",
+            cvc: "184",
+            address: "some street 1",
+            city: "some city",
+            province: "",
+            name: "cardholder name",
+        },
+        {
+            number: "4895040411030717",
+            date1: "06",
+            date2: "24",
+            cvc: "805",
+            address: "some street 1",
+            city: "some city",
+            province: "",
+            name: "cardholder name",
+        },
+        {
+            number: "4895042428207221",
+            date1: "02",
+            date2: "26",
+            cvc: "453",
+            address: "some street 1",
+            city: "some city",
+            province: "",
+            name: "cardholder name",
+        },
+        {
+            number: "4895042176825208",
+            date1: "06",
+            date2: "25",
+            cvc: "338",
+            address: "some street 1",
+            city: "some city",
+            province: "",
+            name: "cardholder name",
+        },
+        {
+            number: "4895047040146103",
+            date1: "03",
+            date2: "26",
+            cvc: "765",
+            address: "some street 1",
+            city: "some city",
+            province: "",
+            name: "cardholder name",
+        },
+        {
+            number: "4895046554817281",
+            date1: "05",
+            date2: "26",
+            cvc: "665",
+            address: "some street 1",
+            city: "some city",
+            province: "",
+            name: "cardholder name",
+        },
+        {
+            number: "4895043187238787",
+            date1: "07",
+            date2: "25",
+            cvc: "238",
+            address: "some street 1",
+            city: "some city",
+            province: "",
+            name: "cardholder name",
+        },
+        {
+            number: "4895045802155486",
+            date1: "03",
+            date2: "23",
+            cvc: "440",
+            address: "some street 1",
+            city: "some city",
+            province: "",
+            name: "cardholder name",
+        },
+    ];
     // const GL = new GoLogin({
     //     token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2MTVkZTc5YzI0YmM2MjJmYjBkZTY3YTEiLCJ0eXBlIjoiZGV2Iiwiand0aWQiOiI2MTVkZTdhZjA5OTZjNjIxMzUzMzgyYWEifQ.GnvoV_Z4AiDXDHkcYKEd_XQo3nMHcg0sPy_OdNzu5ug",
     //     // profile_id: 'yU0Pr0f1leiD',
@@ -85,89 +241,26 @@ const GoLogin = require("gologin");
     });
 
     const page = await browser.newPage();
-    await page.goto("https://pay.google.com/?hl=en");
+    // const result = await openSettings({ page, card: card[0] });
 
-    await page.waitForSelector("button");
-    const payUrl = (await page.url()) + "&hl=en";
-    console.log(payUrl);
-    await page.goto(payUrl);
+    // console.log("result =", result);
 
-    await page.waitForSelector("button");
-    await page.waitForTimeout(2000);
-    const buttons = await page.$$("button");
-    console.log(buttons.length);
-    for (let btn of buttons) {
-        const shouldClick = await btn.evaluate((el) => el.innerText.toLowerCase().includes("add"));
-        console.log(shouldClick);
-        shouldClick && (await btn.click());
-    }
-    await page.waitForTimeout(2000);
-
-    const frameHandle = await page.waitForSelector("iframe");
-    const iFrame = await frameHandle.contentFrame();
-
-    // const iFrame = page.frames().find((el) => true);
-    // console.log(iFrame);
-    // await iFrame.evaluate((el) => console.log(el.innerText));
-    const regionSelector = await iFrame.$('div[class="b3-collapsing-form-placeholder-text"]');
-    await regionSelector.click();
-
-    await page.waitForTimeout(2000);
-    const countrySelectorOpent = await iFrame.$('span[class*="countryselector-flag"]');
-    await countrySelectorOpent.click();
-    await page.waitForTimeout(2000);
-
-    const philippines = await iFrame.$('div[class="goog-menuitem"][data-value="PH"]');
-    await philippines.click();
-
-    await page.waitForTimeout(2000);
-    await iFrame.waitForSelector('div[class="b3-collapsing-form-placeholder-text"]');
-
-    const userName = await iFrame.$('input[name="ccname"]');
-    await userName.click({ clickCount: 3 });
-    await userName.type("changed name", { delay: 200 });
-
-    const regionSelector2 = await iFrame.$('div[class="b3-collapsing-form-placeholder-text"]');
-    await regionSelector2.click();
-
-    await page.waitForTimeout(2000);
-    const addressLine1 = await iFrame.$('input[name="ADDRESS_LINE_1"]');
-    await addressLine1.type(card.address, { delay: 200 });
-
-    await page.waitForTimeout(2000);
-    const cityName = await iFrame.$('input[name="LOCALITY"]');
-    await cityName.type(card.city, { delay: 200 });
-
-    await page.waitForTimeout(2000);
-    const adminArea = await iFrame.$('div[data-name="ADMIN_AREA"]');
-    await adminArea.click();
-
-    await page.waitForTimeout(2000);
-    const areas = await iFrame.$$('div[class="goog-menuitem"][role="menuitem"][data-value]');
-    while (true) {
-        try {
-            await areas[Math.floor(Math.random() * areas.length)].click();
+    let cardsAttempt = 110;
+    while (cardsAttempt < 10) {
+        cardsAttempt++;
+        const result2 = await openSettings({ page, card: card[cardsAttempt] });
+        console.log(result2);
+        if (result2.ok) {
             break;
-        } catch (error) {
-            console.log(error);
         }
     }
+    
 
-    await page.waitForTimeout(2000);
-    const cardnumber = await iFrame.$('input[name="cardnumber"]');
-    await cardnumber.type(card.number, { delay: 200 });
+    await addNewAdsAccount({ page, offer: null });
 
-    await page.waitForTimeout(2000);
-    const ccmonth = await iFrame.$('input[name="ccmonth"]');
-    await ccmonth.type(card.date1, { delay: 200 });
+    return;
 
-    await page.waitForTimeout(2000);
-    const ccyear = await iFrame.$('input[name="ccyear"]');
-    await ccyear.type(card.date2, { delay: 200 });
-
-    await page.waitForTimeout(2000);
-    const cvc = await iFrame.$('input[name="cvc"]');
-    await cvc.type(card.cvc, { delay: 200 });
+    await fillPayNewForm({ page, card });
 
     // console.log(await page.content());
     // await browser.close();
