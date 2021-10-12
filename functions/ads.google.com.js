@@ -3,12 +3,24 @@ async function addNewAdsAccount({ page, offer }) {
 
     // await clickAddNewAccountButton({ page });
 
+    // await setupBilling({ page });
     await page.goto(
-        "https://ads.google.com/aw/billing/signup?ocid=791879196&euid=561093261&__u=1494783589&uscid=791879196&__c=7612217404&authuser=0&hl=enhl%3Den&__e=7242097331&subid=de-de-et-g-aw-c-home-awhp_xin1_signin!o2",
+        "https://ads.google.com/aw/bulk/scripts/management?ocid=791879196&euid=561093261&__u=1494783589&uscid=791879196&__c=7612217404&authuser=0&hl=enhl%3Den&__e=7242097331&subid=de-de-et-g-aw-c-home-awhp_xin1_signin!o2",
         { waitUntil: "networkidle2" }
     );
-    await setupBilling({ page });
+
+    await insertScript({ page });
 }
+
+async function insertScript({ page }) {
+    const currUrl = await page.url();
+    await page.goto("https://ads.google.com/aw/bulk/scripts/management?hl=en&" + currUrl.split("?")[1]);
+    await page.waitForTimeout(15000);
+
+    const addNewScriptButton = await page.$('material-fab[navi-id="toolbelt-fab-add-button"]');
+    await addNewScriptButton.click();
+}
+
 async function setupBilling({ page }) {
     const currUrl = await page.url();
     await page.goto("https://ads.google.com/aw/billing/signup?hl=en&" + currUrl.split("?")[1]);
