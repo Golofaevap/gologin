@@ -239,7 +239,7 @@ async function addCardToExistingProfile({ page, card }) {
     }
 
     await startAddingNewCard({ page });
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(13000);
 
     return await fillingOutCardDetails({ page, card });
 }
@@ -302,8 +302,15 @@ async function openSettings({ page, card }) {
     // const url = await page.url();
     console.log(visitedUrl);
     if (visitedUrl.includes("/gp/w/u/0/home/signup")) {
-        await fillPayNewForm({ page, card });
-        return;
+        console.log(card);
+        try {
+            await fillPayNewForm({ page, card });
+            await page.waitForTimeout(15000);
+            return { ok: true, message: "Card is added" };
+        } catch (e) {
+            return { ok: false, message: "Problem adding card" };
+        }
+        // return {ok:true};
     }
     if (visitedUrl.includes("/gp/w/u/0/home/settings")) {
         const manyProfiles = await page.$('i[aria-label="More payments profile"]');

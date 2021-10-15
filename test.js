@@ -2,7 +2,10 @@ const puppeteer = require("puppeteer-core");
 const GoLogin = require("gologin");
 const { fillPayNewForm, openSettings } = require("./functions/pa.google.com");
 const { addNewAdsAccount } = require("./functions/ads.google.com");
-console.log(fillPayNewForm);
+
+const path = require("path");
+const fs = require("fs");
+// console.log(fillPayNewForm);
 // ----------------------------------------------------
 (async () => {
     const card = [
@@ -174,9 +177,11 @@ console.log(fillPayNewForm);
 
     // const profiles = await GL.profiles();
     // console.log(profiles);
+
+    const profileId = "61672ba69ebeacf3a6f2eb9e";
     const GL2 = new GoLogin({
-        token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2MTVkZTc5YzI0YmM2MjJmYjBkZTY3YTEiLCJ0eXBlIjoiZGV2Iiwiand0aWQiOiI2MTVkZTdhZjA5OTZjNjIxMzUzMzgyYWEifQ.GnvoV_Z4AiDXDHkcYKEd_XQo3nMHcg0sPy_OdNzu5ug",
-        profile_id: "616080c4a25b591d57a39d02",
+        token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2MTY3MmJhNjllYmVhYzQxODNmMmViOWMiLCJ0eXBlIjoiZGV2Iiwiand0aWQiOiI2MTY3MmJiNTRiYzNiNjkwNjIyYjJmMWMifQ.1RFtqZfIW2AXyHY5xpVnxFjnXwXaOWqT68SAY5bexM8",
+        profile_id: profileId,
     });
     // const { status, wsUrl } = await GL2.start();
 
@@ -233,6 +238,31 @@ console.log(fillPayNewForm);
     // };
     // await GL2.update(json);
 
+    function getDirectories(path) {
+        return fs.readdirSync(path).filter(function (file) {
+            return fs.statSync(path + "/" + file).isDirectory();
+        });
+    }
+
+    var sessions = fs.readdirSync("./sessions/");
+    console.log(sessions);
+    let session = null;
+    if (sessions.includes(`${profileId}.json`)) {
+        session = JSON.parse(fs.readFileSync(`./sessions/${profileId}.json`, "utf8"));
+    }
+    if (!session) {
+        session = {
+            profileId,
+            userEmails: {},
+            blocked: false,
+        };
+        fs.writeFileSync(`./sessions/${profileId}.json`, JSON.stringify(session));
+    }
+    if (session.blocked) {
+        console.log("session is blocked");
+        return;
+    }
+
     const { status, wsUrl } = await GL2.start();
 
     const browser = await puppeteer.connect({
@@ -245,7 +275,48 @@ console.log(fillPayNewForm);
 
     // console.log("result =", result);
 
-    let cardsAttempt = 110;
+    // -- select account
+    const isAnyEmailsInUserEmails = Object.keys(session.userEmails);
+    if (!isAnyEmailsInUserEmails.length) {
+        await page.goto("https://accounts.google.com/SignOutOptions?hl=en", { waitUntil: "networkidle2" });
+        await page.waitForTimeout(2000);
+        const accountItems = await page.$$("li[id]");
+        console.log(session);
+        accountItems.forEach(async (el) => {
+            const emailEl = await el.$("span.account-email");
+            const email = await emailEl.evaluate((el) => el.innerText);
+            console.log(session, email);
+
+            if (!session.userEmails[email]) {
+                session.userEmails[email] = {
+                    profileId: profileId,
+
+                    email: email,
+                    isSingout: false,
+                    inWork: false,
+                    isUsed: false,
+                    steps: [],
+                    wasFirstLaunch: false,
+                    adsAccounts: {},
+                };
+            }
+
+            // https://myaccount.google.com/?utm_source=sign_in_no_continue&pli=1
+            await emailEl.click();
+            await page.waitForTimeout(4000);
+            const url = await page.url();
+            if (!url.includes("myaccount.google.com")) {
+                session.userEmails[email].isSingout = true;
+            }
+            fs.writeFileSync(`./sessions/${profileId}.json`, JSON.stringify(session));
+            await page.goto("https://accounts.google.com/SignOutOptions?hl=en", { waitUntil: "networkidle2" });
+            await page.waitForTimeout(2000);
+        });
+    }
+
+    // return;
+
+    let cardsAttempt = 111;
     while (cardsAttempt < 10) {
         cardsAttempt++;
         const result2 = await openSettings({ page, card: card[cardsAttempt] });
@@ -254,13 +325,19 @@ console.log(fillPayNewForm);
             break;
         }
     }
-    
 
-    await addNewAdsAccount({ page, offer: null });
+    // await fillPayNewForm({ page, card });
+
+    console.log("second:", session);
+
+    for (let gmAccIter in session.userEmails) {
+        const gmailAccount = session.userEmails[gmAccIter];
+        if (gmailAccount.isSingout) continue;
+        if (gmailAccount.isUsed) continue;
+        await addNewAdsAccount({ page, offer: null, gmailAccount, session });
+    }
 
     return;
-
-    await fillPayNewForm({ page, card });
 
     // console.log(await page.content());
     // await browser.close();

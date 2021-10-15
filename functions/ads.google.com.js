@@ -1,15 +1,94 @@
-async function addNewAdsAccount({ page, offer }) {
-    await page.goto("https://ads.google.com/nav/selectaccount?hl=en", { waitUntil: "networkidle2" });
+const fs = require("fs");
 
-    // await clickAddNewAccountButton({ page });
+async function addNewAdsAccount({ page, offer, gmailAccount, session }) {
+    await page.goto("https://ads.google.com/nav/selectaccount?hl=en", { waitUntil: "networkidle2" });
+    await page.waitForTimeout(3000);
+    if (!gmailAccount.wasFirstLaunch) {
+        console.log("Collecting old accounts .... ");
+        const accountsExist = await page.$$('material-list-item[class*="user-customer-list-item"]');
+        console.log("accountsExist: ", accountsExist.length, gmailAccount);
+        accountsExist.forEach(async (el) => {
+            const oldAccountsEl = await el.$('span[class*="material-list-item-secondary"]');
+            const adsAccountId = await oldAccountsEl.evaluate((el2) => el2.innerText);
+            gmailAccount.adsAccounts[adsAccountId.trim()] = {
+                wasInAccount: true,
+            };
+            console.log("adsAccountId .... ");
+
+            fs.writeFileSync(`./sessions/${session.profileId}.json`, JSON.stringify(session));
+
+            //
+        });
+    }
+
+    await clickAddNewAccountButton({ page, gmailAccount, session });
 
     // await setupBilling({ page });
-    await page.goto(
-        "https://ads.google.com/aw/bulk/scripts/management?ocid=791879196&euid=561093261&__u=1494783589&uscid=791879196&__c=7612217404&authuser=0&hl=enhl%3Den&__e=7242097331&subid=de-de-et-g-aw-c-home-awhp_xin1_signin!o2",
-        { waitUntil: "networkidle2" }
-    );
+    // await page.goto(
+    //     "https://ads.google.com/aw/bulk/scripts/management?ocid=791879196&euid=561093261&__u=1494783589&uscid=791879196&__c=7612217404&authuser=0&hl=enhl%3Den&__e=7242097331&subid=de-de-et-g-aw-c-home-awhp_xin1_signin!o2",
+    //     { waitUntil: "networkidle2" }
+    // );
 
-    await insertScript({ page });
+    // // await insertScript({ page });
+
+    // await runScript({ page });
+}
+
+async function runScript({ page }) {
+    const currUrl = await page.url();
+    await page.goto("https://ads.google.com/aw/bulk/scripts/management?hl=en&" + currUrl.split("?")[1]);
+    await page.waitForTimeout(15000);
+
+    const rowsWithScripts = await page.$$('div[role="row"]');
+    console.log("rowsWithScripts.length", rowsWithScripts.length);
+    for (let row of rowsWithScripts) {
+        const freqButton = await row.$('div[class*="frequency"]');
+        if (!freqButton) continue;
+        await freqButton.click();
+        await page.waitForTimeout(2000);
+
+        const dropDownSelect = await page.$$('material-dropdown-select[class*="options-dropdown"]');
+        dropDownSelect.forEach(async (el) => {
+            const elInnerText = await el.evaluate((el2) => el2.innerText);
+            if (elInnerText.includes("aily")) {
+                await el.click();
+            }
+        });
+
+        const itemsFromMenu = await page.$$('material-list-item[role="listitem"]');
+        for (let item of itemsFromMenu) {
+            const innerText = await item.evaluate((el) => el.innerText);
+            if (innerText.includes("ourly")) {
+                item.click();
+                break;
+            }
+        }
+    }
+    return;
+
+    let scriptOpenned = false;
+    if (createdScriptLinks) {
+        for (let link of createdScriptLinks) {
+            try {
+                await link.click();
+                scriptOpenned = true;
+                const url = await page.url();
+                await page.waitForTimeout(5000);
+                if (!url.includes("edit")) {
+                    throw "Url does not changed";
+                }
+                break;
+            } catch (e) {
+                console.log("scriptOpenned3", scriptOpenned);
+                scriptOpenned = false;
+                continue;
+            }
+            // if(scriptOpenned) break;
+        }
+    } else {
+        console.log("scriptOpenned2", scriptOpenned);
+        scriptOpenned = false;
+    }
 }
 
 async function insertScript({ page }) {
@@ -17,8 +96,70 @@ async function insertScript({ page }) {
     await page.goto("https://ads.google.com/aw/bulk/scripts/management?hl=en&" + currUrl.split("?")[1]);
     await page.waitForTimeout(15000);
 
-    const addNewScriptButton = await page.$('material-fab[navi-id="toolbelt-fab-add-button"]');
-    await addNewScriptButton.click();
+    const createdScriptLinks = await page.$$("a.script-name-link");
+    let scriptOpenned = false;
+    if (createdScriptLinks) {
+        for (let link of createdScriptLinks) {
+            try {
+                await link.click();
+                scriptOpenned = true;
+                const url = await page.url();
+                await page.waitForTimeout(5000);
+                if (!url.includes("edit")) {
+                    throw "Url does not changed";
+                }
+                break;
+            } catch (e) {
+                console.log("scriptOpenned3", scriptOpenned);
+                scriptOpenned = false;
+                continue;
+            }
+            // if(scriptOpenned) break;
+        }
+    } else {
+        console.log("scriptOpenned2", scriptOpenned);
+        scriptOpenned = false;
+    }
+
+    console.log("scriptOpenned", scriptOpenned);
+    if (!scriptOpenned) {
+        const addNewScriptButton = await page.$('material-fab[navi-id="toolbelt-fab-add-button"]');
+        await addNewScriptButton.click();
+    }
+    await page.waitForTimeout(15000);
+
+    const textToInsert = "function main() {\n\n}";
+
+    const codeMirror = await page.$('div[class*="CodeMirror"]');
+    await codeMirror.click();
+    await page.waitForTimeout(5000);
+    await page.keyboard.down("Control");
+    await page.keyboard.press("KeyA");
+    await page.keyboard.up("Control");
+    await page.waitForTimeout(2000);
+    await page.keyboard.press("Backspace");
+
+    await codeMirror.click();
+
+    // const util = require("util");
+    // require("child_process").spawn("clip").stdin.end(util.inspect("content_for_ \n\nthe_clipboard"));
+
+    const clipboardy = require("clipboardy");
+
+    clipboardy.writeSync("function main(){ \n\n// 213;\n}");
+
+    await page.waitForTimeout(2000);
+    await page.keyboard.down("Control");
+    await page.keyboard.press("KeyV");
+    await page.keyboard.up("Control");
+    await page.waitForTimeout(2000);
+
+    const saveButton = await page.$('material-button[class*="save-button"]');
+    await saveButton.click();
+
+    await page.waitForTimeout(15000);
+    await page.goto("https://ads.google.com/aw/bulk/scripts/management?hl=en&" + currUrl.split("?")[1]);
+    await page.waitForTimeout(15000);
 }
 
 async function setupBilling({ page }) {
@@ -59,7 +200,7 @@ async function setupBilling({ page }) {
     await saveButton.click();
 }
 
-async function clickAddNewAccountButton({ page }) {
+async function clickAddNewAccountButton({ page, gmailAccount, session }) {
     await page.waitForTimeout(2000);
 
     const attemptsAccounts = {};
@@ -67,6 +208,10 @@ async function clickAddNewAccountButton({ page }) {
         const accountsExist = await page.$$("material-list-item");
         let accountToSetup = null;
         for (let exAcc of accountsExist) {
+            const oldAccountsEl = await exAcc.$('span[class*="material-list-item-secondary"]');
+            const adsAccountId = await oldAccountsEl.evaluate((el2) => el2.innerText);
+            console.log(gmailAccount, adsAccountId);
+            if (gmailAccount.adsAccounts[adsAccountId.trim()].wasInAccount) continue;
             const getIdSelegtor = await exAcc.$("span");
             const isSetupInProgress = await exAcc.evaluate(
                 (el) => el.innerText.includes("etup") && el.innerText.includes("progress")
@@ -86,6 +231,19 @@ async function clickAddNewAccountButton({ page }) {
             await buttonToAddAccount.click();
 
             await page.waitForTimeout(10000);
+
+            const accountIdEl = await page.$("div[title]");
+            const accountId = await accountIdEl.evaluate((el) => el.getAttribute("title"));
+            console.log(accountId);
+            gmailAccount.adsAccounts[accountId.trim()] = {
+                accountExpertModeCreated: false,
+                billingSetup: false,
+                scriptAdded: false,
+                scriptLaunched: false,
+                wasInAccount: false,
+                tail: null,
+            };
+            fs.writeFileSync(`./sessions/${session.profileId}.json`, JSON.stringify(session));
 
             await page.goto("https://ads.google.com/nav/selectaccount?hl=en", { waitUntil: "networkidle2" });
         } else {
@@ -117,6 +275,7 @@ async function clickAddNewAccountButton({ page }) {
     // material-dropdown-select
     await radioButtonOnRegistration({ page });
     await submitOnRegistration({ page });
+    fs.writeFileSync(`./sessions/${session.profileId}.json`, JSON.stringify(session));
 }
 async function radioButtonOnRegistration({ page }) {
     try {
