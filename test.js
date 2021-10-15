@@ -5,6 +5,8 @@ const { addNewAdsAccount } = require("./functions/ads.google.com");
 
 const path = require("path");
 const fs = require("fs");
+
+const prompt = require("prompt");
 // console.log(fillPayNewForm);
 // ----------------------------------------------------
 (async () => {

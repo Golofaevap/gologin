@@ -11,6 +11,8 @@
   "dependencies": {
     "clipboardy": "^2.3.0",
     "gologin": "^1.0.21",
-    "puppeteer-core": "^10.4.0"
+    "prompt": "^1.2.0",
+    "puppeteer-core": "^10.4.0",
+    "syncprompt": "^2.0.0"
   }
 }

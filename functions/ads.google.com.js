@@ -1,8 +1,55 @@
 const fs = require("fs");
+// const prompt = require("prompt");
+var prompt = require("syncprompt");
+
+async function executeTask(task, args, attempt) {
+    try {
+        await task(args);
+        return {
+            completed: true,
+            attemptIndex: attempt.attemptIndex++,
+            attempts: [
+                ...attempt.attempts,
+                {
+                    successfull: true,
+                    reason: "ok",
+                },
+            ],
+        };
+    } catch (error) {
+        var name = prompt("Please enter your name? ");
+        return {
+            completed: false,
+            attemptIndex: attempt.attemptIndex++,
+            attempt: [
+                ...attempt.attempts,
+                {
+                    successfull: false,
+                    reason: JSON.stringify(error),
+                },
+            ],
+        };
+    }
+}
+async function addNewAdsAccount2({ page, offer, gmailAccount, session }) {
+    throw "huynya";
+}
 
 async function addNewAdsAccount({ page, offer, gmailAccount, session }) {
     await page.goto("https://ads.google.com/nav/selectaccount?hl=en", { waitUntil: "networkidle2" });
     await page.waitForTimeout(3000);
+    console.log("before .... ");
+    let att = {
+        completed: false,
+        attemptIndex: 0,
+        attempts: [],
+    };
+    att = await executeTask(addNewAdsAccount2, { page, offer, gmailAccount, session }, att);
+    console.log(att);
+    // prompt.start();
+    await page.waitForTimeout(3000);
+    console.log("after .... ");
+
     if (!gmailAccount.wasFirstLaunch) {
         console.log("Collecting old accounts .... ");
         const accountsExist = await page.$$('material-list-item[class*="user-customer-list-item"]');
@@ -234,7 +281,7 @@ async function clickAddNewAccountButton({ page, gmailAccount, session }) {
 
             const accountIdEl = await page.$("div[title]");
             const accountId = await accountIdEl.evaluate((el) => el.getAttribute("title"));
-            console.log(accountId);
+            const urlOfNewAccount = console.log(accountId);
             gmailAccount.adsAccounts[accountId.trim()] = {
                 accountExpertModeCreated: false,
                 billingSetup: false,
