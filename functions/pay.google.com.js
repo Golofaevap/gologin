@@ -1,4 +1,6 @@
-async function fillPayNewForm({ page, card }) {
+const { getNewCard, getCardHolder } = require("../utils");
+
+async function fillPayNewForm({ page }) {
     // pay.google.com/gp/w/u/0/home/signup
     // https://pay.google.com/gp/w/u/0/home/settings
 
@@ -44,21 +46,21 @@ async function fillPayNewForm({ page, card }) {
 
     await page.waitForTimeout(2000);
     await iFrame.waitForSelector('div[class="b3-collapsing-form-placeholder-text"]');
-
+    const cardHolder = await getCardHolder();
     const userName = await iFrame.$('input[name="ccname"]');
     await userName.click({ clickCount: 3 });
-    await userName.type(card.name, { delay: 200 });
+    await userName.type(cardHolder.name, { delay: 200 });
 
     const regionSelector2 = await iFrame.$('div[class="b3-collapsing-form-placeholder-text"]');
     await regionSelector2.click();
 
     await page.waitForTimeout(2000);
     const addressLine1 = await iFrame.$('input[name="ADDRESS_LINE_1"]');
-    await addressLine1.type(card.address, { delay: 200 });
+    await addressLine1.type(cardHolder.address, { delay: 200 });
 
     await page.waitForTimeout(2000);
     const cityName = await iFrame.$('input[name="LOCALITY"]');
-    await cityName.type(card.city, { delay: 200 });
+    await cityName.type(cardHolder.city, { delay: 200 });
 
     await page.waitForTimeout(2000);
     const adminArea = await iFrame.$('div[data-name="ADMIN_AREA"]');
@@ -74,22 +76,22 @@ async function fillPayNewForm({ page, card }) {
             console.log(error);
         }
     }
-
+    const newCard = await getNewCard();
     await page.waitForTimeout(2000);
     const cardnumber = await iFrame.$('input[name="cardnumber"]');
-    await cardnumber.type(card.number, { delay: 200 });
+    await cardnumber.type(newCard.number, { delay: 200 });
 
     await page.waitForTimeout(2000);
     const ccmonth = await iFrame.$('input[name="ccmonth"]');
-    await ccmonth.type(card.date1, { delay: 200 });
+    await ccmonth.type(newCard.date1, { delay: 200 });
 
     await page.waitForTimeout(2000);
     const ccyear = await iFrame.$('input[name="ccyear"]');
-    await ccyear.type(card.date2, { delay: 200 });
+    await ccyear.type(newCard.date2, { delay: 200 });
 
     await page.waitForTimeout(2000);
     const cvc = await iFrame.$('input[name="cvc"]');
-    await cvc.type(card.cvc, { delay: 200 });
+    await cvc.type(newCard.cvc, { delay: 200 });
 
     await page.waitForTimeout(2000);
 
@@ -97,7 +99,7 @@ async function fillPayNewForm({ page, card }) {
     await submitButton.click();
 }
 
-async function createNewPaymentProfile({ page, card }) {
+async function createNewPaymentProfile({ page }) {
     const url = await page.url();
     console.log(url);
     if (!url.includes("/gp/w/u/0/home/settings")) {
@@ -118,7 +120,7 @@ async function createNewPaymentProfile({ page, card }) {
     await selectCountry({ page });
     await page.waitForTimeout(3000);
 
-    await fillOutFormForSecondProfile({ page, card });
+    await fillOutFormForSecondProfile({ page });
     await page.waitForTimeout(3000);
 
     await clickViewNewProfile({ page });
@@ -138,20 +140,20 @@ async function fillOutFormForSecondProfile({ page, card }) {
     const frameHandle = await page.$$("iframe");
     const iFrame = await frameHandle[1].contentFrame();
     await page.waitForTimeout(1000);
-
+    const cardHolder = getCardHolder();
     const nameInput = await iFrame.$('input[name="RECIPIENT"]');
     await nameInput.click({ clickCount: 3 });
-    await nameInput.type(card.name, { delay: 120 });
+    await nameInput.type(cardHolder.name, { delay: 120 });
     await page.waitForTimeout(1000);
 
     const addressInput = await iFrame.$('input[name="ADDRESS_LINE_1"]');
     await addressInput.click({ clickCount: 3 });
-    await addressInput.type(card.address, { delay: 130 });
+    await addressInput.type(cardHolder.address, { delay: 130 });
     await page.waitForTimeout(1000);
 
     const cityInput = await iFrame.$('input[name="LOCALITY"]');
     await cityInput.click({ clickCount: 3 });
-    await cityInput.type(card.city, { delay: 130 });
+    await cityInput.type(cardHolder.city, { delay: 130 });
     await page.waitForTimeout(1000);
 
     const openProvinceList = await iFrame.$('div[data-name="ADMIN_AREA"]');
@@ -228,7 +230,7 @@ async function selectCountry({ page }) {
     await buttonsToConfirmRegion[1].click();
 }
 
-async function addCardToExistingProfile({ page, card }) {
+async function addCardToExistingProfile({ page }) {
     await page.waitForTimeout(3000);
     await page.goto("https://pay.google.com/gp/w/u/0/home/paymentmethods?hl=en", { waitUntil: "networkidle2" });
     const visitedUrl = await page.url();
@@ -241,10 +243,10 @@ async function addCardToExistingProfile({ page, card }) {
     await startAddingNewCard({ page });
     await page.waitForTimeout(13000);
 
-    return await fillingOutCardDetails({ page, card });
+    return await fillingOutCardDetails({ page });
 }
 
-async function fillingOutCardDetails({ page, card }) {
+async function fillingOutCardDetails({ page }) {
     const frameHandle = await page.$$("iframe");
     // console.log("frameHandle.length", frameHandle.length);
     const iFrame = await frameHandle[frameHandle.length - 1].contentFrame();
@@ -252,19 +254,20 @@ async function fillingOutCardDetails({ page, card }) {
     const collapsedForm = await iFrame.$('div[class="b3-collapsing-form-placeholder-text"]');
     await collapsedForm.click();
 
+    const newCard = await getNewCard();
     await page.waitForTimeout(1000);
     const cardNumber = await iFrame.$('input[name="cardnumber"]');
-    await cardNumber.type(card.number, { delay: 90 });
+    await cardNumber.type(newCard.number, { delay: 90 });
     // name="expirationDate-month"
     await page.waitForTimeout(1000);
     const monthDate = await iFrame.$('input[name="expirationDate-month"]');
-    await monthDate.type(card.date1, { delay: 93 });
+    await monthDate.type(newCard.date1, { delay: 93 });
     await page.waitForTimeout(1000);
     const yearDate = await iFrame.$('input[name="expirationDate-year"]');
-    await yearDate.type(card.date2, { delay: 99 });
+    await yearDate.type(newCard.date2, { delay: 99 });
     await page.waitForTimeout(1000);
     const cvc = await iFrame.$('input[name="cvc"]');
-    await cvc.type(card.cvc, { delay: 99 });
+    await cvc.type(newCard.cvc, { delay: 99 });
     await page.waitForTimeout(1000);
 
     const saveCard = await iFrame.$("#saveAddInstrument");
@@ -294,17 +297,18 @@ async function startAddingNewCard({ page }) {
     await addNewCardButton.click();
 }
 
-async function openSettings({ page, card }) {
+async function openSettings({ page }) {
     // https://pay.google.com/gp/w/u/0/home/settings
     await page.goto("https://pay.google.com/gp/w/u/0/home/settings?hl=en", { waitUntil: "networkidle2" });
+    // throw "temp -123";
     await page.waitForTimeout(3000);
     const visitedUrl = await page.url();
     // const url = await page.url();
     console.log(visitedUrl);
     if (visitedUrl.includes("/gp/w/u/0/home/signup")) {
-        console.log(card);
+        // console.log(card);
         try {
-            await fillPayNewForm({ page, card });
+            await fillPayNewForm({ page });
             await page.waitForTimeout(15000);
             return { ok: true, message: "Card is added" };
         } catch (e) {
@@ -331,11 +335,11 @@ async function openSettings({ page, card }) {
                     break;
                 }
             }
-            return await addCardToExistingProfile({ page, card });
+            return await addCardToExistingProfile({ page });
         } else {
-            await createNewPaymentProfile({ page, card });
+            await createNewPaymentProfile({ page });
 
-            return await addCardToExistingProfile({ page, card });
+            return await addCardToExistingProfile({ page });
 
             // return;
         }

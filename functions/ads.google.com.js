@@ -1,36 +1,7 @@
 const fs = require("fs");
+const { jsCopy } = require("../utils");
 // const prompt = require("prompt");
-var prompt = require("syncprompt");
 
-async function executeTask(task, args, attempt) {
-    try {
-        await task(args);
-        return {
-            completed: true,
-            attemptIndex: attempt.attemptIndex++,
-            attempts: [
-                ...attempt.attempts,
-                {
-                    successfull: true,
-                    reason: "ok",
-                },
-            ],
-        };
-    } catch (error) {
-        var name = prompt("Please enter your name? ");
-        return {
-            completed: false,
-            attemptIndex: attempt.attemptIndex++,
-            attempt: [
-                ...attempt.attempts,
-                {
-                    successfull: false,
-                    reason: JSON.stringify(error),
-                },
-            ],
-        };
-    }
-}
 async function addNewAdsAccount2({ page, offer, gmailAccount, session }) {
     throw "huynya";
 }
@@ -39,13 +10,14 @@ async function addNewAdsAccount({ page, offer, gmailAccount, session }) {
     await page.goto("https://ads.google.com/nav/selectaccount?hl=en", { waitUntil: "networkidle2" });
     await page.waitForTimeout(3000);
     console.log("before .... ");
-    let att = {
-        completed: false,
-        attemptIndex: 0,
-        attempts: [],
-    };
-    att = await executeTask(addNewAdsAccount2, { page, offer, gmailAccount, session }, att);
-    console.log(att);
+    // let att = {
+    //     completed: false,
+    //     attemptIndex: 0,
+    //     attempts: [],
+    // };
+    // att = await executeTask(addNewAdsAccount2, { page, offer, gmailAccount, session }, jsCopy(att), page);
+
+    // if (!att.completed) throw "terminate";
     // prompt.start();
     await page.waitForTimeout(3000);
     console.log("after .... ");
@@ -57,28 +29,20 @@ async function addNewAdsAccount({ page, offer, gmailAccount, session }) {
         accountsExist.forEach(async (el) => {
             const oldAccountsEl = await el.$('span[class*="material-list-item-secondary"]');
             const adsAccountId = await oldAccountsEl.evaluate((el2) => el2.innerText);
-            gmailAccount.adsAccounts[adsAccountId.trim()] = {
-                wasInAccount: true,
-            };
-            console.log("adsAccountId .... ");
+            if (!gmailAccount.adsAccounts[adsAccountId.trim()]) {
+                gmailAccount.adsAccounts[adsAccountId.trim()] = {
+                    wasInAccount: true,
+                };
+                console.log("adsAccountId .... ");
 
-            fs.writeFileSync(`./sessions/${session.profileId}.json`, JSON.stringify(session));
+                fs.writeFileSync(`./sessions/${session.profileId}.json`, JSON.stringify(session));
+            }
 
             //
         });
     }
 
     await clickAddNewAccountButton({ page, gmailAccount, session });
-
-    // await setupBilling({ page });
-    // await page.goto(
-    //     "https://ads.google.com/aw/bulk/scripts/management?ocid=791879196&euid=561093261&__u=1494783589&uscid=791879196&__c=7612217404&authuser=0&hl=enhl%3Den&__e=7242097331&subid=de-de-et-g-aw-c-home-awhp_xin1_signin!o2",
-    //     { waitUntil: "networkidle2" }
-    // );
-
-    // // await insertScript({ page });
-
-    // await runScript({ page });
 }
 
 async function runScript({ page }) {
