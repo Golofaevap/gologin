@@ -1,12 +1,15 @@
 const fs = require("fs");
-const { jsCopy } = require("../utils");
+const { jsCopy, gotoWithEmail } = require("../utils");
 // const prompt = require("prompt");
 
-async function addNewAdsAccount2({ page, offer, gmailAccount, session }) {
+async function addNewAdsAccount2({ page, offer, emailToWorkWith, session }) {
     throw "huynya";
 }
 
-async function addNewAdsAccount({ page, offer, gmailAccount, session }) {
+async function addNewAdsAccount({ page, offer, emailToWorkWith, session }) {
+    // await gotowith
+    await gotoWithEmail({ page, emailToWorkWith, url: "https://pay.google.com/gp/w/u/0/home/settings?hl=en" });
+
     await page.goto("https://ads.google.com/nav/selectaccount?hl=en", { waitUntil: "networkidle2" });
     await page.waitForTimeout(3000);
     console.log("before .... ");
@@ -15,22 +18,22 @@ async function addNewAdsAccount({ page, offer, gmailAccount, session }) {
     //     attemptIndex: 0,
     //     attempts: [],
     // };
-    // att = await executeTask(addNewAdsAccount2, { page, offer, gmailAccount, session }, jsCopy(att), page);
+    // att = await executeTask(addNewAdsAccount2, { page, offer, emailToWorkWith, session }, jsCopy(att), page);
 
     // if (!att.completed) throw "terminate";
     // prompt.start();
     await page.waitForTimeout(3000);
     console.log("after .... ");
 
-    if (!gmailAccount.wasFirstLaunch) {
+    if (!emailToWorkWith.wasFirstLaunch) {
         console.log("Collecting old accounts .... ");
         const accountsExist = await page.$$('material-list-item[class*="user-customer-list-item"]');
-        console.log("accountsExist: ", accountsExist.length, gmailAccount);
-        accountsExist.forEach(async (el) => {
+        console.log("accountsExist: ", accountsExist.length, emailToWorkWith.email);
+        for (let el of accountsExist) {
             const oldAccountsEl = await el.$('span[class*="material-list-item-secondary"]');
             const adsAccountId = await oldAccountsEl.evaluate((el2) => el2.innerText);
-            if (!gmailAccount.adsAccounts[adsAccountId.trim()]) {
-                gmailAccount.adsAccounts[adsAccountId.trim()] = {
+            if (!emailToWorkWith.adsAccounts[adsAccountId.trim()]) {
+                emailToWorkWith.adsAccounts[adsAccountId.trim()] = {
                     wasInAccount: true,
                 };
                 console.log("adsAccountId .... ");
@@ -39,10 +42,48 @@ async function addNewAdsAccount({ page, offer, gmailAccount, session }) {
             }
 
             //
-        });
-    }
+        }
 
-    await clickAddNewAccountButton({ page, gmailAccount, session });
+        emailToWorkWith.wasFirstLaunch = true;
+        fs.writeFileSync(`./sessions/${session.profileId}.json`, JSON.stringify(session));
+    }
+    const runExistingAccount = [];
+    for (const iAA in emailToWorkWith.adsAccounts) {
+        const adsAccount = emailToWorkWith.adsAccounts[iAA];
+        if (adsAccount.wasInAccount) continue;
+        if (adsAccount.accountExpertModeCreated) continue;
+        if (adsAccount.completed) continue;
+        if (adsAccount.suspended) continue;
+        if (adsAccount.blocked) continue;
+
+        // console.log("       ---    account to work with", iAA);
+        adsAccount.id = iAA;
+        runExistingAccount.push(adsAccount);
+    }
+    if (!runExistingAccount.length) {
+        return await clickAddNewAccountButton({ page, emailToWorkWith, session });
+    } else {
+        console.log("Select Action: ");
+        console.log("               existing accounts:");
+        console.log("                 [i]=[action]");
+        console.log("                     [i]=[0,1,2]");
+        console.log("                     [action]=[cont, block]");
+
+        console.log("               add new account  ");
+        console.log("                 [NEW]");
+        for (let i in runExistingAccount) {
+            const exAcc = runExistingAccount[i];
+            console.log(`[${i}] - ${exAcc.id}`);
+            console.log(
+                `accountExpertModeCreated : ${exAcc.accountExpertModeCreated}    |    `,
+                `billingSetup : ${exAcc.billingSetup}    |    `,
+                `scriptAdded : ${exAcc.scriptAdded}    |    `,
+                `scriptLaunched : ${exAcc.scriptLaunched}    |    `
+            );
+        }
+        // add prompt here
+        
+    }
 }
 
 async function runScript({ page }) {
@@ -211,7 +252,7 @@ async function setupBilling({ page }) {
     await saveButton.click();
 }
 
-async function clickAddNewAccountButton({ page, gmailAccount, session }) {
+async function clickAddNewAccountButton({ page, emailToWorkWith, session }) {
     await page.waitForTimeout(2000);
 
     const attemptsAccounts = {};
@@ -221,8 +262,8 @@ async function clickAddNewAccountButton({ page, gmailAccount, session }) {
         for (let exAcc of accountsExist) {
             const oldAccountsEl = await exAcc.$('span[class*="material-list-item-secondary"]');
             const adsAccountId = await oldAccountsEl.evaluate((el2) => el2.innerText);
-            console.log(gmailAccount, adsAccountId);
-            if (gmailAccount.adsAccounts[adsAccountId.trim()].wasInAccount) continue;
+            console.log(emailToWorkWith.email, adsAccountId);
+            if (emailToWorkWith.adsAccounts[adsAccountId.trim()].wasInAccount) continue;
             const getIdSelegtor = await exAcc.$("span");
             const isSetupInProgress = await exAcc.evaluate(
                 (el) => el.innerText.includes("etup") && el.innerText.includes("progress")
@@ -245,13 +286,16 @@ async function clickAddNewAccountButton({ page, gmailAccount, session }) {
 
             const accountIdEl = await page.$("div[title]");
             const accountId = await accountIdEl.evaluate((el) => el.getAttribute("title"));
-            const urlOfNewAccount = console.log(accountId);
-            gmailAccount.adsAccounts[accountId.trim()] = {
+            // const urlOfNewAccount = console.log(accountId);
+            emailToWorkWith.adsAccounts[accountId.trim()] = {
                 accountExpertModeCreated: false,
                 billingSetup: false,
                 scriptAdded: false,
                 scriptLaunched: false,
                 wasInAccount: false,
+                suspended: false,
+                blocked: false,
+                completed: false,
                 tail: null,
             };
             fs.writeFileSync(`./sessions/${session.profileId}.json`, JSON.stringify(session));
@@ -293,6 +337,7 @@ async function radioButtonOnRegistration({ page }) {
         const radioButton = await page.$$("material-radio");
         await radioButton[Math.floor(Math.random(radioButton.length))].click();
     } catch (error) {
+        console.log("radioButtonOnRegistration catch ...................");
         console.log(error);
     }
 }
@@ -338,9 +383,10 @@ async function selectCountryOnRegistration({ page }) {
             await page.waitForTimeout(2000);
             break;
         } catch (error) {
+            console.log("selectCountryOnRegistration ..... catch  ...........");
+            console.log(error);
             await page.goto("https://ads.google.com/aw/signup/expert?hl=en&" + urlToOpenExpertMode.split("?")[1]);
             await page.waitForTimeout(5000);
-            console.log(error);
         }
     }
 

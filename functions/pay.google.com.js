@@ -1,15 +1,17 @@
-const { getNewCard, getCardHolder } = require("../utils");
+const { getNewCard, getCardHolder, deBug, gotoWithEmail } = require("../utils");
 
-async function fillPayNewForm({ page }) {
-    // pay.google.com/gp/w/u/0/home/signup
+async function fillPayNewForm({ page, emailToWorkWith }) {
+    // pay.google.com/home/signup
     // https://pay.google.com/gp/w/u/0/home/settings
 
-    await page.goto("https://pay.google.com/?hl=en", { waitUntil: "networkidle2" });
-
-    await page.waitForSelector("button");
+    console.log("fillPayNewForm ... ");
+    await gotoWithEmail({ page, emailToWorkWith, url: "https://pay.google.com/gp/w/u/1/home/signup?hl=en" });
     const payUrl = (await page.url()) + "&hl=en";
     console.log(payUrl);
-    await page.goto(payUrl);
+
+    await page.waitForSelector("button");
+    // console.log(payUrl);
+    // await page.goto(payUrl);
 
     await page.waitForSelector("button");
     await page.waitForTimeout(2000);
@@ -23,7 +25,7 @@ async function fillPayNewForm({ page }) {
     await page.waitForTimeout(2000);
 
     const url = await page.url();
-    if (!url.includes("pay.google.com/gp/w/u/0/home/signup")) {
+    if (!url.includes("/home/signup")) {
         console.log("wrong url addres to continue");
         return;
     }
@@ -76,33 +78,50 @@ async function fillPayNewForm({ page }) {
             console.log(error);
         }
     }
-    const newCard = await getNewCard();
-    await page.waitForTimeout(2000);
-    const cardnumber = await iFrame.$('input[name="cardnumber"]');
-    await cardnumber.type(newCard.number, { delay: 200 });
+    for (let i = 0; i < 5; i++) {
+        try {
+            const newCard = await getNewCard();
+            await page.waitForTimeout(2000);
+            const cardnumber = await iFrame.$('input[name="cardnumber"]');
+            await cardnumber.click({ clickCount: 3 });
+            await cardnumber.type(newCard.number, { delay: 200 });
 
-    await page.waitForTimeout(2000);
-    const ccmonth = await iFrame.$('input[name="ccmonth"]');
-    await ccmonth.type(newCard.date1, { delay: 200 });
+            await page.waitForTimeout(2000);
+            const ccmonth = await iFrame.$('input[name="ccmonth"]');
+            await ccmonth.click({ clickCount: 3 });
+            await ccmonth.type(newCard.date1, { delay: 200 });
 
-    await page.waitForTimeout(2000);
-    const ccyear = await iFrame.$('input[name="ccyear"]');
-    await ccyear.type(newCard.date2, { delay: 200 });
+            await page.waitForTimeout(2000);
+            const ccyear = await iFrame.$('input[name="ccyear"]');
+            await ccyear.click({ clickCount: 3 });
+            await ccyear.type(newCard.date2, { delay: 200 });
 
-    await page.waitForTimeout(2000);
-    const cvc = await iFrame.$('input[name="cvc"]');
-    await cvc.type(newCard.cvc, { delay: 200 });
+            await page.waitForTimeout(2000);
+            const cvc = await iFrame.$('input[name="cvc"]');
+            await cvc.click({ clickCount: 3 });
+            await cvc.type(newCard.cvc, { delay: 200 });
 
-    await page.waitForTimeout(2000);
+            await page.waitForTimeout(2000);
 
-    const submitButton = await iFrame.$('div[class*="submit-button"]');
-    await submitButton.click();
+            const submitButton = await iFrame.$('div[class*="submit-button"]');
+            await submitButton.click();
+            const checkwithSubmitButton = await iFrame.$('div[class*="submit-button"]');
+            if (checkwithSubmitButton) {
+                throw "card was not saved";
+            }
+            return { ok: true, message: "card with new profile added" };
+        } catch (error) {
+            console.log("adding new card in new profile catch ....");
+            console.log(error);
+        }
+    }
+    throw "card was not added to new profile";
 }
 
 async function createNewPaymentProfile({ page }) {
     const url = await page.url();
-    console.log(url);
-    if (!url.includes("/gp/w/u/0/home/settings")) {
+    deBug(url);
+    if (!url.includes("/home/settings")) {
         console.log("wrong url addres to continue", "createNewPaymentProfile");
         return;
     }
@@ -129,7 +148,7 @@ async function createNewPaymentProfile({ page }) {
 
 async function clickViewNewProfile({ page }) {
     const frameHandle = await page.$$("iframe");
-    const iFrame = await frameHandle[1].contentFrame();
+    const iFrame = await frameHandle[frameHandle.length - 1].contentFrame();
     await page.waitForTimeout(1000);
 
     const button = await iFrame.$('div[role="button"]');
@@ -137,10 +156,14 @@ async function clickViewNewProfile({ page }) {
 }
 
 async function fillOutFormForSecondProfile({ page, card }) {
+    deBug("fillOutFormForSecondProfile ...... ");
     const frameHandle = await page.$$("iframe");
-    const iFrame = await frameHandle[1].contentFrame();
+    deBug("fillOutFormForSecondProfile ...... ", "frameHandle.length", frameHandle.length);
+
+    const iFrame = await frameHandle[frameHandle.length - 1].contentFrame();
     await page.waitForTimeout(1000);
-    const cardHolder = getCardHolder();
+    const cardHolder = await getCardHolder();
+    // console.log("cardHolder:", cardHolder);
     const nameInput = await iFrame.$('input[name="RECIPIENT"]');
     await nameInput.click({ clickCount: 3 });
     await nameInput.type(cardHolder.name, { delay: 120 });
@@ -183,10 +206,20 @@ async function fillOutFormForSecondProfile({ page, card }) {
 }
 
 async function openCollapsedRegion({ page }) {
+    deBug("openCollapsedRegion ... ");
+    await page.waitForSelector("iframe");
+    await page.waitForTimeout(5000);
     const frameHandle = await page.$$("iframe");
-    const iFrame = await frameHandle[1].contentFrame();
+    const currentUrl = await page.url();
+    deBug("openCollapsedRegion ... ", "currentUrl", currentUrl);
+    deBug("openCollapsedRegion ... ", "frameHandle.length", frameHandle.length);
 
+    const iFrame = await frameHandle[frameHandle.length - 1].contentFrame();
+
+    await page.waitForTimeout(3000);
     const h1s = await iFrame.$$('div[class*="b3-collapsing-form-collapsed-content"]');
+    deBug("openCollapsedRegion ... ", "h1s.length", h1s.length);
+
     for (let h1 of h1s) {
         const shouldExit = await h1.evaluate((el) => {
             console.log(el.innerText);
@@ -207,7 +240,7 @@ async function openCollapsedRegion({ page }) {
 
 async function confirmCreationOfNewProfile({ page }) {
     const frameHandle2 = await page.$$("iframe");
-    const iFrame2 = await frameHandle2[1].contentFrame();
+    const iFrame2 = await frameHandle2[frameHandle2.length - 1].contentFrame();
     const buttonsToConfirmNewProfileCreations = await iFrame2.$$('div[class*="jfk-button"]');
     // console.log(buttonsToConfirmNewProfileCreations.length);
     await buttonsToConfirmNewProfileCreations[1].click();
@@ -215,7 +248,7 @@ async function confirmCreationOfNewProfile({ page }) {
 
 async function selectCountry({ page }) {
     const frameHandle3 = await page.$$("iframe");
-    const iFrame3 = await frameHandle3[1].contentFrame();
+    const iFrame3 = await frameHandle3[frameHandle3.length - 1].contentFrame();
     const buttonToOpenCountryList = await iFrame3.$('div[class*="goog-flat-menu-button-dropdown"]');
     // console.log(buttonsToConfirmNewProfileCreations.length);
     await buttonToOpenCountryList.click();
@@ -232,10 +265,13 @@ async function selectCountry({ page }) {
 
 async function addCardToExistingProfile({ page }) {
     await page.waitForTimeout(3000);
-    await page.goto("https://pay.google.com/gp/w/u/0/home/paymentmethods?hl=en", { waitUntil: "networkidle2" });
+    let currentUrl = await page.url();
+    currentUrl = currentUrl.split("/home/")[0];
+    deBug(currentUrl + "/home/paymentmethods?hl=en");
+    await page.goto(currentUrl + "/home/paymentmethods?hl=en", { waitUntil: "networkidle2" });
     const visitedUrl = await page.url();
     console.log(visitedUrl);
-    if (!visitedUrl.includes("gp/w/u/0/home/paymentmethods")) {
+    if (!visitedUrl.includes("/home/paymentmethods")) {
         console.log("error in url to continue work", "addCardToExistingProfile");
         return;
     }
@@ -283,6 +319,13 @@ async function fillingOutCardDetails({ page }) {
             console.log({ ok: false, message: "Problem adding card" });
             return { ok: false, message: "Problem adding card" };
         }
+        const saveCardCheck = await iFrame.$("#saveAddInstrument");
+        // await saveCard.click();
+        if (saveCardCheck) {
+            console.log({ ok: false, message: "Problem adding card" });
+            return { ok: false, message: "Problem adding card" };
+        }
+
         return { ok: true, message: "Card is added" };
     } catch (error) {
         return { ok: true, message: "Card is added" };
@@ -296,29 +339,40 @@ async function startAddingNewCard({ page }) {
     const addNewCardButton = await iFrame.$('a[class*="b3id-payment-method-add-instrument-link"]');
     await addNewCardButton.click();
 }
+// ====================================================================================================
 
-async function openSettings({ page }) {
+// ====================================================================================================
+async function openSettings({ page, emailToWorkWith }) {
+    console.log("openSettings ... ");
     // https://pay.google.com/gp/w/u/0/home/settings
-    await page.goto("https://pay.google.com/gp/w/u/0/home/settings?hl=en", { waitUntil: "networkidle2" });
+    // await page.goto("https://pay.google.com/gp/w/u/0/home/settings?hl=en", { waitUntil: "networkidle2" });
+    await gotoWithEmail({ page, emailToWorkWith, url: "https://pay.google.com/gp/w/u/0/home/settings?hl=en" });
     // throw "temp -123";
     await page.waitForTimeout(3000);
     const visitedUrl = await page.url();
     // const url = await page.url();
-    console.log(visitedUrl);
-    if (visitedUrl.includes("/gp/w/u/0/home/signup")) {
+    console.log(" - openSettings - visitedUrl", visitedUrl);
+    if (visitedUrl.includes("/home/signup")) {
         // console.log(card);
+        console.log(" -  - openSettings", 'visitedUrl.includes("/home/signup"');
+
         try {
-            await fillPayNewForm({ page });
+            await fillPayNewForm({ page, emailToWorkWith });
             await page.waitForTimeout(15000);
             return { ok: true, message: "Card is added" };
         } catch (e) {
+            console.log(e);
             return { ok: false, message: "Problem adding card" };
         }
         // return {ok:true};
     }
-    if (visitedUrl.includes("/gp/w/u/0/home/settings")) {
+    if (visitedUrl.includes("/home/settings")) {
+        console.log(" -  - openSettings - visitedUrl", 'visitedUrl.includes("/home/settings)"');
+
         const manyProfiles = await page.$('i[aria-label="More payments profile"]');
         if (manyProfiles) {
+            console.log(" -  - openSettings ", " if (manyProfiles) - true");
+
             console.log("manyProfiles");
             await manyProfiles.click();
             await page.waitForTimeout(1000);
@@ -337,6 +391,7 @@ async function openSettings({ page }) {
             }
             return await addCardToExistingProfile({ page });
         } else {
+            console.log(" -  - openSettings ", " if (manyProfiles) - false");
             await createNewPaymentProfile({ page });
 
             return await addCardToExistingProfile({ page });

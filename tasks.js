@@ -2,6 +2,7 @@ const { createTask } = require("./utils");
 // -------------------------------------------------------------------------------------
 
 const { fillPayNewForm, openSettings } = require("./functions/pay.google.com");
+const { addNewAdsAccount } = require("./functions/ads.google.com");
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------
@@ -20,6 +21,17 @@ const openPaySettings = async () => {
     return await createTask(openSettings, descs, url, name);
 };
 
+const createPHAdsAccount = async () => {
+    const name = "createPHAdsAccount";
+    const url = "https://ads.google.com/selectaccount?hl=en";
+    const descs = [
+        "Result of the function is created account for Philippines",
+        "Manual execution: ",
+        " -- be sure that ads account creted on philippines and currency is PHP",
+    ];
+    return await createTask(addNewAdsAccount, descs, url, name);
+};
+
 async function enrichTasksWithFunctions(steps) {
     console.log("enrichTasksWithFunctions ....");
     console.log("steps.length", steps.length);
@@ -28,10 +40,14 @@ async function enrichTasksWithFunctions(steps) {
         if (name === "openPaySettings") {
             s.main = openSettings;
         }
+        if (name === "createPHAdsAccount") {
+            s.main = addNewAdsAccount;
+        }
     }
 }
 
 module.exports = {
     openPaySettings,
+    createPHAdsAccount,
     enrichTasksWithFunctions,
 };

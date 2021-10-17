@@ -14,7 +14,7 @@ const {
     jsCopy,
     selectEmailInAccountToWorkWith,
 } = require("./utils");
-const { openPaySettings, enrichTasksWithFunctions } = require("./tasks");
+const { openPaySettings, enrichTasksWithFunctions, createPHAdsAccount } = require("./tasks");
 var prompt = require("syncprompt");
 // console.log(fillPayNewForm);
 
@@ -26,8 +26,10 @@ async function createStepsForGmailAccount(emailToWorkWith, session) {
         return;
     }
     const taskOpenPaySettings = await openPaySettings();
+    const taskCreatePHAdsAccount = await createPHAdsAccount();
 
     emailToWorkWith.steps.push(taskOpenPaySettings);
+    emailToWorkWith.steps.push(taskCreatePHAdsAccount);
 
     emailToWorkWith.isStepsAdded = true;
     fs.writeFileSync(`./sessions/${session.profileId}.json`, JSON.stringify(session));
@@ -74,8 +76,13 @@ async function createStepsForGmailAccount(emailToWorkWith, session) {
     // console.log(taskOpenPaySettings);
     for (let i in emailToWorkWith.steps) {
         if (!emailToWorkWith.steps[i].completed) {
-            console.log(emailToWorkWith.steps[i]);
-            let result = await executeTask(emailToWorkWith.steps[i], { page }, jsCopy(att), page);
+            console.log(emailToWorkWith.steps[i].name, " ... ");
+            let result = await executeTask(
+                emailToWorkWith.steps[i],
+                { page, emailToWorkWith, session },
+                jsCopy(att),
+                page
+            );
             result.funcName = emailToWorkWith.steps[i].name;
             emailToWorkWith.history.push(result);
             if (!result.completed) {
@@ -85,6 +92,7 @@ async function createStepsForGmailAccount(emailToWorkWith, session) {
                 return;
             }
             emailToWorkWith.steps[i].completed = true;
+            console.log(emailToWorkWith.steps[i].name, emailToWorkWith.steps[i].completed);
             fs.writeFileSync(`./sessions/${session.profileId}.json`, JSON.stringify(session));
         }
     }
@@ -109,10 +117,11 @@ async function createStepsForGmailAccount(emailToWorkWith, session) {
     //     await addNewAdsAccount({ page, offer: null, gmailAccount, session });
     // }
     console.log("EXECUTION COMPLETED");
-    return;
 
     // console.log(await page.content());
     // await browser.close();
-    // await GL.stop();
+    // await GL2.uploadProfileCookiesToServer();
     // await GL2.stop();
+    // await GL.stop();
+    return;
 })();

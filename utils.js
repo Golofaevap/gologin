@@ -1,6 +1,11 @@
 var prompt = require("syncprompt");
 const fs = require("fs");
 
+function deBug(...rest) {
+    const degug = true;
+    if (degug) console.log(...rest);
+}
+
 // -----------------------------------------------------------------
 function jsCopy(obj) {
     return JSON.parse(JSON.stringify(obj));
@@ -20,18 +25,24 @@ function createTask(func, descs, url, name) {
 // -----------------------------------------------------------------
 async function executeTask(task, args, attempt, page) {
     for (let i = 0; i < 10; i++) {
+        deBug("\n\ntask iteration: ", i, " .................... ");
         attempt.attemptIndex++;
         try {
-            await task.main(args);
+            const result = await task.main(args);
+
             attempt.attempts.push({
                 successfull: true,
                 reason: "ok",
                 iteration: attempt.attemptIndex,
             });
-            attempt.completed = true;
-            task.completed = true;
-            return jsCopy(attempt);
+            if (result.ok) {
+                attempt.completed = true;
+                task.completed = true;
+                return jsCopy(attempt);
+            }
+            throw "Task return {ok: false}";
         } catch (error) {
+            console.log(error);
             attempt.attempts.push({
                 successfull: false,
                 reason: JSON.stringify(error),
@@ -395,6 +406,24 @@ async function getCardHolder() {
     };
 }
 
+async function gotoWithEmail({ page, emailToWorkWith, url }) {
+    console.log("gotoWithEmail ...");
+    console.log(page, emailToWorkWith, url);
+    await page.goto("https://accounts.google.com/SignOutOptions?hl=en&continue=" + url, { waitUntil: "networkidle2" });
+    await page.waitForTimeout(2000);
+    const accountItems = await page.$$("li[id]");
+    console.log("accountItems.length", accountItems.length);
+    for (let el of accountItems) {
+        const emailEl = await el.$("span.account-email");
+        const email = await emailEl.evaluate((el) => el.innerText);
+        console.log("gotoWithEmail -> ", email, emailToWorkWith.email);
+        if (email.trim() === emailToWorkWith.email) {
+            return await el.click();
+        }
+    }
+    throw { terminate: true, message: "No email selected" };
+}
+
 module.exports = {
     executeTask,
     jsCopy,
@@ -404,4 +433,6 @@ module.exports = {
     selectEmailInAccountToWorkWith,
     getNewCard,
     getCardHolder,
+    deBug,
+    gotoWithEmail,
 };
