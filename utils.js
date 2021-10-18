@@ -12,7 +12,7 @@ function jsCopy(obj) {
 }
 // -----------------------------------------------------------------
 function createTask(func, descs, url, name) {
-    console.log(func);
+    // console.log(func);
     return {
         name: name,
         main: func,
@@ -125,6 +125,8 @@ async function readSession(profileId) {
         session = {
             profileId,
             userEmails: {},
+            currenEmail: null,
+            currentAdsAccount: null,
             blocked: false,
         };
         fs.writeFileSync(`./sessions/${profileId}.json`, JSON.stringify(session));
@@ -408,7 +410,7 @@ async function getCardHolder() {
 
 async function gotoWithEmail({ page, emailToWorkWith, url }) {
     console.log("gotoWithEmail ...");
-    console.log(page, emailToWorkWith, url);
+    // console.log(page, emailToWorkWith, url);
     await page.goto("https://accounts.google.com/SignOutOptions?hl=en&continue=" + url, { waitUntil: "networkidle2" });
     await page.waitForTimeout(2000);
     const accountItems = await page.$$("li[id]");

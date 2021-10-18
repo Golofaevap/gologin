@@ -21,6 +21,7 @@ const openPaySettings = async () => {
     return await createTask(openSettings, descs, url, name);
 };
 
+
 const createPHAdsAccount = async () => {
     const name = "createPHAdsAccount";
     const url = "https://ads.google.com/selectaccount?hl=en";
@@ -32,7 +33,8 @@ const createPHAdsAccount = async () => {
     return await createTask(addNewAdsAccount, descs, url, name);
 };
 
-async function enrichTasksWithFunctions(steps) {
+async function enrichTasksWithFunctions(steps, session) {
+    session.funcs = {};
     console.log("enrichTasksWithFunctions ....");
     console.log("steps.length", steps.length);
     for (let s of steps) {
@@ -43,6 +45,7 @@ async function enrichTasksWithFunctions(steps) {
         if (name === "createPHAdsAccount") {
             s.main = addNewAdsAccount;
         }
+        session.funcs[name] = s;
     }
 }
 

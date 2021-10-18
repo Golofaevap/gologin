@@ -16,13 +16,21 @@ const {
 } = require("./utils");
 const { openPaySettings, enrichTasksWithFunctions, createPHAdsAccount } = require("./tasks");
 var prompt = require("syncprompt");
+const phScenario = require("./scenarios/ph-auto");
 // console.log(fillPayNewForm);
 
+// ----------------------------------------------------
+async function fillSessionWithFunctions(session) {
+    const taskOpenPaySettings = await openPaySettings();
+    const taskCreatePHAdsAccount = await createPHAdsAccount();
+    session.funcs = { taskOpenPaySettings, taskCreatePHAdsAccount };
+}
+// ----------------------------------------------------
 // ----------------------------------------------------
 async function createStepsForGmailAccount(emailToWorkWith, session) {
     if (!emailToWorkWith) return;
     if (emailToWorkWith.isStepsAdded) {
-        await enrichTasksWithFunctions(emailToWorkWith.steps);
+        await enrichTasksWithFunctions(emailToWorkWith.steps, session);
         return;
     }
     const taskOpenPaySettings = await openPaySettings();
@@ -32,6 +40,7 @@ async function createStepsForGmailAccount(emailToWorkWith, session) {
     emailToWorkWith.steps.push(taskCreatePHAdsAccount);
 
     emailToWorkWith.isStepsAdded = true;
+    await enrichTasksWithFunctions(emailToWorkWith.steps, session);
     fs.writeFileSync(`./sessions/${session.profileId}.json`, JSON.stringify(session));
 }
 // ----------------------------------------------------
@@ -55,16 +64,31 @@ async function createStepsForGmailAccount(emailToWorkWith, session) {
     if (!session.emailFound) {
         await readAllEmailsInLog(page, session);
     }
+    session.save = null;
 
-    // const result = await openSettings({ page, card: card[0] });
+    const saveSession = (session) => {
+        const current = session.current;
+        session.current = null;
+        fs.writeFileSync(`./sessions/${session.profileId}.json`, JSON.stringify(session));
+        session.current = current;
+    };
 
-    // console.log("result =", result);
-    // return;
+    session.save = saveSession;
+    // session.save = () => {
+    //     const current = this.current;
+    //     this.current = null;
+    //     fs.writeFileSync(`./sessions/${this.profileId}.json`, JSON.stringify(this));
+    //     this.current = this.current;
+    // };
 
     const emailToWorkWith = await selectEmailInAccountToWorkWith(page, session);
-    console.log("emailToWorkWith", emailToWorkWith);
+    session.current = {
+        gmail: emailToWorkWith.email,
+    };
+    console.log("emailToWorkWith", emailToWorkWith.email);
 
-    await createStepsForGmailAccount(emailToWorkWith, session);
+    // await createStepsForGmailAccount(emailToWorkWith, session);
+    await fillSessionWithFunctions(session);
 
     // const taskOpenPaySettings = await openPaySettings();
     let att = {
@@ -72,30 +96,91 @@ async function createStepsForGmailAccount(emailToWorkWith, session) {
         attemptIndex: 0,
         attempts: [],
     };
+    // for (let func of phScenario) {
+    //     console.log(func);
+    //     console.log(session.current);
+    // }
 
-    // console.log(taskOpenPaySettings);
-    for (let i in emailToWorkWith.steps) {
-        if (!emailToWorkWith.steps[i].completed) {
-            console.log(emailToWorkWith.steps[i].name, " ... ");
-            let result = await executeTask(
-                emailToWorkWith.steps[i],
-                { page, emailToWorkWith, session },
-                jsCopy(att),
-                page
-            );
-            result.funcName = emailToWorkWith.steps[i].name;
-            emailToWorkWith.history.push(result);
-            if (!result.completed) {
-                fs.writeFileSync(`./sessions/${session.profileId}.json`, JSON.stringify(session));
-                await browser.close();
-                await GL2.stop();
-                return;
-            }
-            emailToWorkWith.steps[i].completed = true;
-            console.log(emailToWorkWith.steps[i].name, emailToWorkWith.steps[i].completed);
-            fs.writeFileSync(`./sessions/${session.profileId}.json`, JSON.stringify(session));
+    // gmail is known ----- -------
+    // console.log(session, "\n\n\n\n")
+    if (!session.userEmails[session.current.gmail].isCardAdded) {
+        let result = await executeTask(
+            session.funcs["taskOpenPaySettings"],
+            { page, emailToWorkWith, session },
+            jsCopy(att),
+            page
+        );
+        result.funcName = session.funcs["taskOpenPaySettings"].name;
+        if (!result.completed) {
+            session.save();
+            await browser.close();
+            await GL2.stop();
+            return;
         }
+        session.userEmails[session.current.gmail].isCardAdded = true;
+        session.save();
     }
+
+    // card added into selected gmail here;
+    if (!session.current.ads) {
+        let result = await executeTask(
+            session.funcs["selectAdsAccount"],
+            { page, emailToWorkWith, session },
+            jsCopy(att),
+            page
+        );
+        result.funcName = session.funcs["taskOpenPaySettings"].name;
+        if (!result.completed) {
+            session.save();
+            await browser.close();
+            await GL2.stop();
+            return;
+        }
+        session.userEmails[session.current.gmail].isCardAdded = true;
+        session.save();
+    }
+
+    if (session.userEmails[session.current.gmail].adsAccounts) {
+        let result = await executeTask(
+            session.funcs["taskOpenPaySettings"],
+            { page, emailToWorkWith, session },
+            jsCopy(att),
+            page
+        );
+        result.funcName = session.funcs["taskOpenPaySettings"].name;
+        if (!result.completed) {
+            session.save();
+            await browser.close();
+            await GL2.stop();
+            return;
+        }
+        session.userEmails[session.current.gmail].isCardAdded = true;
+        session.save();
+    }
+
+    // // console.log(taskOpenPaySettings);
+    // for (let i in emailToWorkWith.steps) {
+    //     if (!emailToWorkWith.steps[i].completed) {
+    //         console.log(emailToWorkWith.steps[i].name, " ... ");
+    //         let result = await executeTask(
+    //             emailToWorkWith.steps[i],
+    //             { page, emailToWorkWith, session },
+    //             jsCopy(att),
+    //             page
+    //         );
+    //         result.funcName = emailToWorkWith.steps[i].name;
+    //         emailToWorkWith.history.push(result);
+    //         if (!result.completed) {
+    //             fs.writeFileSync(`./sessions/${session.profileId}.json`, JSON.stringify(session));
+    //             await browser.close();
+    //             await GL2.stop();
+    //             return;
+    //         }
+    //         emailToWorkWith.steps[i].completed = true;
+    //         console.log(emailToWorkWith.steps[i].name, emailToWorkWith.steps[i].completed);
+    //         fs.writeFileSync(`./sessions/${session.profileId}.json`, JSON.stringify(session));
+    //     }
+    // }
     // let cardsAttempt = 111;
     // while (cardsAttempt < 10) {
     //     cardsAttempt++;

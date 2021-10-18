@@ -1,5 +1,8 @@
 const { getNewCard, getCardHolder, deBug, gotoWithEmail } = require("../utils");
 
+// ================================================================================
+// ================================================================================
+
 async function fillPayNewForm({ page, emailToWorkWith }) {
     // pay.google.com/home/signup
     // https://pay.google.com/gp/w/u/0/home/settings
@@ -117,6 +120,8 @@ async function fillPayNewForm({ page, emailToWorkWith }) {
     }
     throw "card was not added to new profile";
 }
+// ================================================================================
+// ================================================================================
 
 async function createNewPaymentProfile({ page }) {
     const url = await page.url();
@@ -145,6 +150,8 @@ async function createNewPaymentProfile({ page }) {
     await clickViewNewProfile({ page });
     await page.waitForTimeout(3000);
 }
+// ================================================================================
+// ================================================================================
 
 async function clickViewNewProfile({ page }) {
     const frameHandle = await page.$$("iframe");
@@ -154,6 +161,8 @@ async function clickViewNewProfile({ page }) {
     const button = await iFrame.$('div[role="button"]');
     await button.click();
 }
+// ================================================================================
+// ================================================================================
 
 async function fillOutFormForSecondProfile({ page, card }) {
     deBug("fillOutFormForSecondProfile ...... ");
@@ -204,6 +213,8 @@ async function fillOutFormForSecondProfile({ page, card }) {
     // console.log(submitButtons.length);
     await submitButtons[1].click();
 }
+// ================================================================================
+// ================================================================================
 
 async function openCollapsedRegion({ page }) {
     deBug("openCollapsedRegion ... ");
@@ -237,6 +248,8 @@ async function openCollapsedRegion({ page }) {
     await createNewProfileButton.click();
     return false;
 }
+// ================================================================================
+// ================================================================================
 
 async function confirmCreationOfNewProfile({ page }) {
     const frameHandle2 = await page.$$("iframe");
@@ -245,6 +258,8 @@ async function confirmCreationOfNewProfile({ page }) {
     // console.log(buttonsToConfirmNewProfileCreations.length);
     await buttonsToConfirmNewProfileCreations[1].click();
 }
+// ================================================================================
+// ================================================================================
 
 async function selectCountry({ page }) {
     const frameHandle3 = await page.$$("iframe");
@@ -262,6 +277,8 @@ async function selectCountry({ page }) {
     console.log(buttonsToConfirmRegion.length);
     await buttonsToConfirmRegion[1].click();
 }
+// ================================================================================
+// ================================================================================
 
 async function addCardToExistingProfile({ page }) {
     await page.waitForTimeout(3000);
@@ -281,6 +298,8 @@ async function addCardToExistingProfile({ page }) {
 
     return await fillingOutCardDetails({ page });
 }
+// ================================================================================
+// ================================================================================
 
 async function fillingOutCardDetails({ page }) {
     const frameHandle = await page.$$("iframe");
@@ -331,6 +350,8 @@ async function fillingOutCardDetails({ page }) {
         return { ok: true, message: "Card is added" };
     }
 }
+// ================================================================================
+// ================================================================================
 
 async function startAddingNewCard({ page }) {
     const frameHandle = await page.$$("iframe");
@@ -339,9 +360,8 @@ async function startAddingNewCard({ page }) {
     const addNewCardButton = await iFrame.$('a[class*="b3id-payment-method-add-instrument-link"]');
     await addNewCardButton.click();
 }
-// ====================================================================================================
-
-// ====================================================================================================
+// ================================================================================
+// ================================================================================
 async function openSettings({ page, emailToWorkWith }) {
     console.log("openSettings ... ");
     // https://pay.google.com/gp/w/u/0/home/settings
@@ -352,8 +372,10 @@ async function openSettings({ page, emailToWorkWith }) {
     const visitedUrl = await page.url();
     // const url = await page.url();
     console.log(" - openSettings - visitedUrl", visitedUrl);
+    emailToWorkWith.inWork = true;
     if (visitedUrl.includes("/home/signup")) {
         // console.log(card);
+
         console.log(" -  - openSettings", 'visitedUrl.includes("/home/signup"');
 
         try {

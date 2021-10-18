@@ -1,30 +1,85 @@
+const prompt = require("syncprompt");
 const fs = require("fs");
 const { jsCopy, gotoWithEmail } = require("../utils");
 // const prompt = require("prompt");
-
+// ================================================================================
+// ================================================================================
 async function addNewAdsAccount2({ page, offer, emailToWorkWith, session }) {
     throw "huynya";
 }
 
-async function addNewAdsAccount({ page, offer, emailToWorkWith, session }) {
-    // await gotowith
-    await gotoWithEmail({ page, emailToWorkWith, url: "https://pay.google.com/gp/w/u/0/home/settings?hl=en" });
+// ================================================================================
+// ================================================================================
+async function selectAdsAccountToWorkWith({ page, offer, emailToWorkWith, session }) {
+    const runExistingAccount = [];
+    while (true) {
+        for (const iAA in emailToWorkWith.adsAccounts) {
+            const adsAccount = emailToWorkWith.adsAccounts[iAA];
+            if (adsAccount.wasInAccount) continue;
+            if (adsAccount.accountExpertModeCreated) continue;
+            if (adsAccount.completed) continue;
+            if (adsAccount.suspended) continue;
+            if (adsAccount.blocked) continue;
+            if (adsAccount.inWork) continue;
+
+            // console.log("       ---    account to work with", iAA);
+            adsAccount.id = iAA;
+            runExistingAccount.push(adsAccount);
+        }
+        if (runExistingAccount.length) {
+            const selectedAccount = runExistingAccount[Math.floor(Math.random() * runExistingAccount.length)];
+            // adsId: accountId.trim(),
+            session.current.ads = selectedAccount.adsId;
+            return { ok: true };
+        } else {
+            const result = await addNewAccountButtonClick({ page, offer, emailToWorkWith, session });
+            if (!result.ok) {
+                // Здесь хорощо бы проверять причину ошибки и либо пытаться снова - дибо блочить весь рекламный кабинет
+                // либо блочить весь аккаунт гугла (gmail)
+                throw "unnable to create new accout";
+            }
+        }
+    }
+}
+// ================================================================================
+// ================================================================================
+async function addNewAccountButtonClick({ page, offer, emailToWorkWith, session }) {
+    const buttonToAddAccount = await page.waitForSelector('material-button[class*="new-account-button"]');
+    await buttonToAddAccount.click();
+
+    await page.waitForTimeout(10000);
+
+    const accountIdEl = await page.$("div[title]");
+    const accountId = await accountIdEl.evaluate((el) => el.getAttribute("title"));
+    // const urlOfNewAccount = console.log(accountId);
+    emailToWorkWith.adsAccounts[accountId.trim()] = {
+        adsId: accountId.trim(),
+        accountExpertModeCreated: false,
+        billingSetup: false,
+        scriptAdded: false,
+        scriptLaunched: false,
+        wasInAccount: false,
+        suspended: false,
+        blocked: false,
+        completed: false,
+        inWork: false,
+        tail: null,
+    };
+    fs.writeFileSync(`./sessions/${session.profileId}.json`, JSON.stringify(session));
 
     await page.goto("https://ads.google.com/nav/selectaccount?hl=en", { waitUntil: "networkidle2" });
-    await page.waitForTimeout(3000);
-    console.log("before .... ");
-    // let att = {
-    //     completed: false,
-    //     attemptIndex: 0,
-    //     attempts: [],
-    // };
-    // att = await executeTask(addNewAdsAccount2, { page, offer, emailToWorkWith, session }, jsCopy(att), page);
+    return { ok: true, message: "Account was created" };
+}
+// ================================================================================
+// ================================================================================
 
-    // if (!att.completed) throw "terminate";
-    // prompt.start();
-    await page.waitForTimeout(3000);
-    console.log("after .... ");
+async function addNewAdsAccount() {
+    // await gotowith
+    await gotoWithEmail({ page, emailToWorkWith, url: "https://ads.google.com/nav/selectaccount?hl=en" });
 
+    // await page.goto("https://ads.google.com/nav/selectaccount?hl=en", { waitUntil: "networkidle2" });
+    await page.waitForTimeout(3000);
+    emailToWorkWith.inWork = true;
     if (!emailToWorkWith.wasFirstLaunch) {
         console.log("Collecting old accounts .... ");
         const accountsExist = await page.$$('material-list-item[class*="user-customer-list-item"]');
@@ -55,6 +110,7 @@ async function addNewAdsAccount({ page, offer, emailToWorkWith, session }) {
         if (adsAccount.completed) continue;
         if (adsAccount.suspended) continue;
         if (adsAccount.blocked) continue;
+        if (adsAccount.inWork) continue;
 
         // console.log("       ---    account to work with", iAA);
         adsAccount.id = iAA;
@@ -63,29 +119,61 @@ async function addNewAdsAccount({ page, offer, emailToWorkWith, session }) {
     if (!runExistingAccount.length) {
         return await clickAddNewAccountButton({ page, emailToWorkWith, session });
     } else {
-        console.log("Select Action: ");
-        console.log("               existing accounts:");
-        console.log("                 [i]=[action]");
-        console.log("                     [i]=[0,1,2]");
-        console.log("                     [action]=[cont, block]");
+    }
+    return { ok: true, message: "account selected" };
+}
+// ================================================================================
+// ================================================================================
 
-        console.log("               add new account  ");
-        console.log("                 [NEW]");
-        for (let i in runExistingAccount) {
-            const exAcc = runExistingAccount[i];
-            console.log(`[${i}] - ${exAcc.id}`);
-            console.log(
-                `accountExpertModeCreated : ${exAcc.accountExpertModeCreated}    |    `,
-                `billingSetup : ${exAcc.billingSetup}    |    `,
-                `scriptAdded : ${exAcc.scriptAdded}    |    `,
-                `scriptLaunched : ${exAcc.scriptLaunched}    |    `
-            );
+async function selectAccountToWorkWith_PROTO() {
+    console.log("Select Action: ");
+    console.log("               existing accounts:");
+    console.log("                 [i]=[action]");
+    console.log("                     [i]=[0,1,2]");
+    console.log("                     [action]=[cont, block]");
+
+    console.log("               add new account  ");
+    console.log("                 [NEW]");
+    for (let i in runExistingAccount) {
+        const exAcc = runExistingAccount[i];
+        console.log(`[${i}] - ${exAcc.id}`);
+        console.log(
+            `accountExpertModeCreated : ${exAcc.accountExpertModeCreated}    |    `,
+            `billingSetup : ${exAcc.billingSetup}    |    `,
+            `scriptAdded : ${exAcc.scriptAdded}    |    `,
+            `scriptLaunched : ${exAcc.scriptLaunched}    |    `
+        );
+    }
+    // add prompt here
+    for (let i = 0; i < 10; i++) {
+        var continVar = prompt(`Select account and action (attempt ${i}):`);
+        if (!continVar) continue;
+        if (continVar === "exit") break;
+        if (continVar.toUpperCase() === "NEW") {
+            // add new Account
         }
-        // add prompt here
-        
+        const splitedPromt = continVar.split("=");
+        if (splitedPromt.length !== 2) {
+            console.log("!!!!   Check input and try again");
+            continue;
+        }
+        const indx = splitedPromt[0];
+        const cmd = splitedPromt[1];
+        if (indx in runExistingAccount && ["cont", "block"].includes(cmd)) {
+            // selectt right account
+            console.log("");
+            console.log("");
+            console.log("SELECTED ACCOUNT ");
+            console.log(runExistingAccount[indx]);
+            break;
+        } else {
+            console.log("      !!!!! Command was not recognized! Try again");
+        }
     }
 }
 
+// ================================================================================
+// ================================================================================
 async function runScript({ page }) {
     const currUrl = await page.url();
     await page.goto("https://ads.google.com/aw/bulk/scripts/management?hl=en&" + currUrl.split("?")[1]);
@@ -251,11 +339,14 @@ async function setupBilling({ page }) {
     const saveButton = await page.$('material-button[class*="saveButton"]');
     await saveButton.click();
 }
+// ================================================================================
+// ================================================================================
 
 async function clickAddNewAccountButton({ page, emailToWorkWith, session }) {
     await page.waitForTimeout(2000);
 
     const attemptsAccounts = {};
+    const adsAccountIdToWorkWith = null;
     while (true) {
         const accountsExist = await page.$$("material-list-item");
         let accountToSetup = null;
@@ -269,7 +360,9 @@ async function clickAddNewAccountButton({ page, emailToWorkWith, session }) {
                 (el) => el.innerText.includes("etup") && el.innerText.includes("progress")
             );
             if (!isSetupInProgress) continue;
-            const getId = await getIdSelegtor.evaluate((el) => el.innerText);
+            let getId = await getIdSelegtor.evaluate((el) => el.innerText);
+            getId = getId.replaceAll(" ", "");
+            adsAccountIdToWorkWith = getId;
             if (!(getId in attemptsAccounts)) {
                 attemptsAccounts[getId] = 1;
             }
@@ -296,6 +389,7 @@ async function clickAddNewAccountButton({ page, emailToWorkWith, session }) {
                 suspended: false,
                 blocked: false,
                 completed: false,
+                inWork: false,
                 tail: null,
             };
             fs.writeFileSync(`./sessions/${session.profileId}.json`, JSON.stringify(session));
@@ -314,6 +408,9 @@ async function clickAddNewAccountButton({ page, emailToWorkWith, session }) {
     await page.waitForTimeout(5000);
     const urlToOpenExpertMode = await page.url();
     await page.goto("https://ads.google.com/aw/campaigns/new?" + urlToOpenExpertMode.split("?")[1]);
+    emailToWorkWith.adsAccounts[adsAccountIdToWorkWith].inWork = true;
+    emailToWorkWith.adsAccounts[adsAccountIdToWorkWith].tail = urlToOpenExpertMode.split("?")[1];
+
     await page.keyboard.press("Escape");
     await page.waitForTimeout(1000);
 
@@ -331,7 +428,11 @@ async function clickAddNewAccountButton({ page, emailToWorkWith, session }) {
     await radioButtonOnRegistration({ page });
     await submitOnRegistration({ page });
     fs.writeFileSync(`./sessions/${session.profileId}.json`, JSON.stringify(session));
+
+    return { ok: true, message: "Account Was Created" };
 }
+// ================================================================================
+// ================================================================================
 async function radioButtonOnRegistration({ page }) {
     try {
         const radioButton = await page.$$("material-radio");
@@ -341,6 +442,8 @@ async function radioButtonOnRegistration({ page }) {
         console.log(error);
     }
 }
+// ================================================================================
+// ================================================================================
 
 async function submitOnRegistration({ page }) {
     await page.waitForTimeout(3000);
@@ -350,6 +453,8 @@ async function submitOnRegistration({ page }) {
 
     await page.waitForTimeout(13000);
 }
+// ================================================================================
+// ================================================================================
 
 async function selectCurrencyOnRegistration({ page }) {
     await page.keyboard.press("Escape");
@@ -372,6 +477,8 @@ async function selectCurrencyOnRegistration({ page }) {
         }
     }
 }
+// ================================================================================
+// ================================================================================
 async function selectCountryOnRegistration({ page }) {
     for (let i = 0; i < 5; i++) {
         try {
@@ -405,6 +512,8 @@ async function selectCountryOnRegistration({ page }) {
         }
     }
 }
+// ================================================================================
+// ================================================================================
 
 module.exports = {
     addNewAdsAccount,

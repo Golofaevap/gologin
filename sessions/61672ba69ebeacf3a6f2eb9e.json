@@ -1,1 +1,124 @@
-{"profileId":"61672ba69ebeacf3a6f2eb9e","userEmails":{"ligsili1993@rambler.ru":{"profileId":"61672ba69ebeacf3a6f2eb9e","email":"ligsili1993@rambler.ru","isSingout":false,"inWork":false,"isUsed":false,"isStepsAdded":true,"steps":[{"name":"openPaySettings","url":"https://pay.google.com/gp/w/u/0/home/settings?hl=en","descriptions":["Result of the function is added card to payment profile","Manual execution: "," -- be sure that payment profile added to account"," -- card added to payment profile"],"completed":true},{"name":"createPHAdsAccount","url":"https://ads.google.com/selectaccount?hl=en","descriptions":["Result of the function is created account for Philippines","Manual execution: "," -- be sure that ads account creted on philippines and currency is PHP"],"completed":false}],"wasFirstLaunch":true,"history":[],"adsAccounts":{"788-000-1639":{"wasInAccount":true},"108-929-7978":{"wasInAccount":true},"721-341-1397":{"wasInAccount":true},"314-733-6143":{"accountExpertModeCreated":false,"billingSetup":false,"scriptAdded":false,"scriptLaunched":false,"wasInAccount":false,"tail":null},"284-671-0247":{"accountExpertModeCreated":false,"billingSetup":false,"scriptAdded":false,"scriptLaunched":false,"wasInAccount":false,"tail":null}}},"babervess1984@rambler.ru":{"profileId":"61672ba69ebeacf3a6f2eb9e","email":"babervess1984@rambler.ru","isSingout":false,"inWork":false,"isUsed":false,"isStepsAdded":false,"steps":[],"wasFirstLaunch":false,"history":[],"adsAccounts":{}}},"blocked":false,"emailFound":true}
+{
+    "profileId": "61672ba69ebeacf3a6f2eb9e",
+    "userEmails": {
+        "ligsili1993@rambler.ru": {
+            "profileId": "61672ba69ebeacf3a6f2eb9e",
+            "email": "ligsili1993@rambler.ru",
+            "isCardAdded": true,
+            "isSingout": false,
+            "inWork": true,
+            "isUsed": false,
+            "isStepsAdded": true,
+            "steps": [
+                {
+                    "name": "openPaySettings",
+                    "url": "https://pay.google.com/gp/w/u/0/home/settings?hl=en",
+                    "descriptions": [
+                        "Result of the function is added card to payment profile",
+                        "Manual execution: ",
+                        " -- be sure that payment profile added to account",
+                        " -- card added to payment profile"
+                    ],
+                    "completed": true
+                },
+                {
+                    "name": "createPHAdsAccount",
+                    "url": "https://ads.google.com/selectaccount?hl=en",
+                    "descriptions": [
+                        "Result of the function is created account for Philippines",
+                        "Manual execution: ",
+                        " -- be sure that ads account creted on philippines and currency is PHP"
+                    ],
+                    "completed": false
+                }
+            ],
+            "wasFirstLaunch": true,
+            "history": [
+                {
+                    "completed": true,
+                    "attemptIndex": 1,
+                    "attempts": [
+                        {
+                            "successfull": true,
+                            "reason": "ok",
+                            "iteration": 1
+                        }
+                    ],
+                    "funcName": "createPHAdsAccount"
+                },
+                {
+                    "completed": true,
+                    "attemptIndex": 2,
+                    "attempts": [
+                        {
+                            "successfull": true,
+                            "reason": "ok",
+                            "iteration": 1
+                        },
+                        {
+                            "successfull": false,
+                            "reason": "{}",
+                            "iteration": 1
+                        },
+                        {
+                            "successfull": true,
+                            "reason": "ok",
+                            "iteration": 2
+                        }
+                    ],
+                    "funcName": "createPHAdsAccount"
+                },
+                {
+                    "completed": true,
+                    "attemptIndex": 1,
+                    "attempts": [
+                        {
+                            "successfull": true,
+                            "reason": "ok",
+                            "iteration": 1
+                        }
+                    ],
+                    "funcName": "createPHAdsAccount"
+                }
+            ],
+            "adsAccounts": {
+                "788-000-1639": {
+                    "wasInAccount": true
+                },
+                "108-929-7978": {
+                    "wasInAccount": true
+                },
+                "721-341-1397": {
+                    "wasInAccount": true
+                },
+                "517-045-8100": {
+                    "accountExpertModeCreated": false,
+                    "billingSetup": false,
+                    "scriptAdded": false,
+                    "scriptLaunched": false,
+                    "wasInAccount": false,
+                    "suspended": false,
+                    "blocked": false,
+                    "completed": false,
+                    "inWork": false,
+                    "tail": null,
+                    "id": "517-045-8100"
+                }
+            }
+        },
+        "babervess1984@rambler.ru": {
+            "profileId": "61672ba69ebeacf3a6f2eb9e",
+            "email": "babervess1984@rambler.ru",
+            "isSingout": false,
+            "inWork": false,
+            "isUsed": false,
+            "isStepsAdded": false,
+            "steps": [],
+            "wasFirstLaunch": false,
+            "history": [],
+            "adsAccounts": {}
+        }
+    },
+    "blocked": false,
+    "emailFound": true
+}
