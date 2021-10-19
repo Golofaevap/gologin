@@ -98,11 +98,53 @@
                     "scriptLaunched": false,
                     "wasInAccount": false,
                     "suspended": false,
-                    "blocked": false,
+                    "blocked": true,
                     "completed": false,
                     "inWork": false,
                     "tail": null,
                     "id": "517-045-8100"
+                },
+                "437-174-7825": {
+                    "adsId": "437-174-7825",
+                    "accountExpertModeCreated": true,
+                    "billingSetup": false,
+                    "scriptAdded": false,
+                    "scriptLaunched": false,
+                    "wasInAccount": false,
+                    "suspended": false,
+                    "blocked": false,
+                    "completed": false,
+                    "inWork": false,
+                    "tail": null,
+                    "id": "437-174-7825"
+                },
+                "379-474-0011": {
+                    "adsId": "379-474-0011",
+                    "accountExpertModeCreated": true,
+                    "billingSetup": false,
+                    "scriptAdded": false,
+                    "scriptLaunched": false,
+                    "wasInAccount": false,
+                    "suspended": false,
+                    "blocked": false,
+                    "completed": false,
+                    "inWork": true,
+                    "tail": "ocid=795860361&euid=564586257&__u=3576117193&uscid=795860361&__c=9977551489&authuser=0&sourceid=emp&subid=ww-ww-et-g-aw-a-vasquette_ads_cons_1!o2&cmpnInfo=%7B%228%22:%2291809a78-e4eb-4205-a03a-9ed96424b15c%22%7D&step=cgl",
+                    "id": "379-474-0011"
+                },
+                "445-957-1248": {
+                    "adsId": "445-957-1248",
+                    "accountExpertModeCreated": true,
+                    "billingSetup": false,
+                    "scriptAdded": false,
+                    "scriptLaunched": false,
+                    "wasInAccount": false,
+                    "suspended": false,
+                    "blocked": false,
+                    "completed": false,
+                    "inWork": true,
+                    "tail": "ocid=795812776&euid=564586257&__u=3576117193&uscid=795812776&__c=8653726824&authuser=0&mode=signup&sourceid=emp&subid=ww-ww-et-g-aw-a-vasquette_ads_cons_1!o2&cmpnInfo=%7B%228%22:%2239f8001b-3812-4635-9a78-b8ce421bc53a%22%7D&step=cgl",
+                    "id": "445-957-1248"
                 }
             }
         },
@@ -120,5 +162,51 @@
         }
     },
     "blocked": false,
-    "emailFound": true
+    "emailFound": true,
+    "current": null,
+    "funcs": {
+        "taskOpenPaySettings": {
+            "name": "openPaySettings",
+            "url": "https://pay.google.com/gp/w/u/0/home/settings?hl=en",
+            "descriptions": [
+                "Result of the function is added card to payment profile",
+                "Manual execution: ",
+                " -- be sure that payment profile added to account",
+                " -- card added to payment profile"
+            ],
+            "completed": false
+        },
+        "taskCreatePHAdsAccount": {
+            "name": "createPHAdsAccount",
+            "url": "https://ads.google.com/selectaccount?hl=en",
+            "descriptions": [
+                "Result of the function is created account for Philippines",
+                "Manual execution: ",
+                " -- be sure that ads account creted on philippines and currency is PHP"
+            ],
+            "completed": false
+        },
+        "taskSelecAdsAccountToWork": {
+            "name": "selecAdsAccountToWork",
+            "url": "https://ads.google.com/selectaccount?hl=en",
+            "descriptions": [
+                "Simply select ads account.",
+                "Manual execution: ",
+                " -- Add account id in field 'current', and continue execution"
+            ],
+            "completed": true
+        },
+        "taskCreateAccountInExperMode": {
+            "name": "createAdsAccountinExpertMode",
+            "url": "https://ads.google.com/selectaccount?hl=en",
+            "descriptions": [
+                "Create account in Expert mode without campaigns",
+                "Manual execution: ",
+                " -- Create account ",
+                " -- select Philippines Country",
+                " -- select PHP currency"
+            ],
+            "completed": true
+        }
+    }
 }

@@ -26,6 +26,7 @@ function createTask(func, descs, url, name) {
 async function executeTask(task, args, attempt, page) {
     for (let i = 0; i < 10; i++) {
         deBug("\n\ntask iteration: ", i, " .................... ");
+        deBug("task: ", task);
         attempt.attemptIndex++;
         try {
             const result = await task.main(args);
@@ -40,6 +41,7 @@ async function executeTask(task, args, attempt, page) {
                 task.completed = true;
                 return jsCopy(attempt);
             }
+            console.log(result);
             throw "Task return {ok: false}";
         } catch (error) {
             console.log(error);

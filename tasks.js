@@ -2,7 +2,7 @@ const { createTask } = require("./utils");
 // -------------------------------------------------------------------------------------
 
 const { fillPayNewForm, openSettings } = require("./functions/pay.google.com");
-const { addNewAdsAccount } = require("./functions/ads.google.com");
+const { addNewAdsAccount, selectAdsAccountToWorkWith, createAdsAccountInExpertMode } = require("./functions/ads.google.com");
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------
@@ -21,7 +21,6 @@ const openPaySettings = async () => {
     return await createTask(openSettings, descs, url, name);
 };
 
-
 const createPHAdsAccount = async () => {
     const name = "createPHAdsAccount";
     const url = "https://ads.google.com/selectaccount?hl=en";
@@ -31,6 +30,30 @@ const createPHAdsAccount = async () => {
         " -- be sure that ads account creted on philippines and currency is PHP",
     ];
     return await createTask(addNewAdsAccount, descs, url, name);
+};
+
+const selecAdsAccountToWork = async () => {
+    const name = "selecAdsAccountToWork";
+    const url = "https://ads.google.com/selectaccount?hl=en";
+    const descs = [
+        "Simply select ads account.",
+        "Manual execution: ",
+        " -- Add account id in field 'current', and continue execution",
+    ];
+    return await createTask(selectAdsAccountToWorkWith, descs, url, name);
+};
+
+const createAdsAccountinExpertMode_taskCreator = async () => {
+    const name = "createAdsAccountinExpertMode";
+    const url = "https://ads.google.com/selectaccount?hl=en";
+    const descs = [
+        "Create account in Expert mode without campaigns",
+        "Manual execution: ",
+        " -- Create account ",
+        " -- select Philippines Country",
+        " -- select PHP currency",
+    ];
+    return await createTask(createAdsAccountInExpertMode, descs, url, name);
 };
 
 async function enrichTasksWithFunctions(steps, session) {
@@ -49,8 +72,12 @@ async function enrichTasksWithFunctions(steps, session) {
     }
 }
 
+
+
 module.exports = {
     openPaySettings,
     createPHAdsAccount,
     enrichTasksWithFunctions,
+    selecAdsAccountToWork,
+    createAdsAccountinExpertMode_taskCreator
 };

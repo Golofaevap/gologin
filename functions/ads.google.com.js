@@ -1,16 +1,71 @@
 const prompt = require("syncprompt");
 const fs = require("fs");
-const { jsCopy, gotoWithEmail } = require("../utils");
+const { jsCopy, gotoWithEmail, deBug } = require("../utils");
 // const prompt = require("prompt");
 // ================================================================================
 // ================================================================================
-async function addNewAdsAccount2({ page, offer, emailToWorkWith, session }) {
-    throw "huynya";
+async function createAdsAccountInExpertMode({ page, offer, emailToWorkWith, session }) {
+    console.log(`async function  createAdsAccountInExpertMode`);
+    const waitForUrl = page.url();
+    if (!waitForUrl.includes("nav/selectaccount")) {
+        await gotoWithEmail({ page, emailToWorkWith, url: "https://ads.google.com/nav/selectaccount?hl=en" });
+        await page.waitForTimeout(3000);
+    }
+    await page.waitForTimeout(3000);
+
+    const accountsExist = await page.$$("material-list-item");
+    deBug(`accountsExist.length`, accountsExist.length);
+    let accountToSetup = null;
+    for (let exAcc of accountsExist) {
+        deBug(`for (let exAcc of accountsExist) {`);
+        const oldAccountsEl = await exAcc.$('span[class*="material-list-item-secondary"]');
+        const adsAccountId = await oldAccountsEl.evaluate((el2) => el2.innerText);
+        if (session.current.ads !== adsAccountId.trim()) continue;
+        await oldAccountsEl.click();
+        await page.waitForTimeout(13000);
+        accountToSetup = true;
+    }
+    if (!accountToSetup) return { ok: false, message: "account to setup not selected" };
+
+    await page.waitForTimeout(5000);
+    const urlToOpenExpertMode = await page.url();
+    const tail = urlToOpenExpertMode.split("?")[1];
+    await page.goto("https://ads.google.com/aw/campaigns/new?hl=en" + tail);
+    session.userEmails[session.current.gmail].adsAccounts[session.current.ads].inWork = true;
+    session.userEmails[session.current.gmail].adsAccounts[session.current.ads].tail = tail;
+    session.save(session);
+    // emailToWorkWith.adsAccounts[adsAccountIdToWorkWith].tail = urlToOpenExpertMode.split("?")[1];
+
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(1000);
+
+    // span signup-escape _ngcontent-awn-CM_EDITING-4
+    await page.waitForTimeout(5000);
+    await page.goto("https://ads.google.com/aw/signup/expert?hl=en&" + tail);
+    await page.waitForTimeout(5000);
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(1000);
+
+    await selectCountryOnRegistration({ page });
+    await page.waitForTimeout(3000);
+    await selectCurrencyOnRegistration({ page });
+    // material-dropdown-select
+    await radioButtonOnRegistration({ page });
+    await submitOnRegistration({ page });
+
+    session.userEmails[session.current.gmail].adsAccounts[session.current.ads].accountExpertModeCreated = true;
+    session.save(session);
+    // fs.writeFileSync(`./sessions/${session.profileId}.json`, JSON.stringify(session));
+
+    return { ok: true, message: "Account Was Created" };
 }
 
 // ================================================================================
 // ================================================================================
 async function selectAdsAccountToWorkWith({ page, offer, emailToWorkWith, session }) {
+    await gotoWithEmail({ page, emailToWorkWith, url: "https://ads.google.com/nav/selectaccount?hl=en" });
+    await page.waitForTimeout(3000);
+
     const runExistingAccount = [];
     while (true) {
         for (const iAA in emailToWorkWith.adsAccounts) {
@@ -29,7 +84,7 @@ async function selectAdsAccountToWorkWith({ page, offer, emailToWorkWith, sessio
         if (runExistingAccount.length) {
             const selectedAccount = runExistingAccount[Math.floor(Math.random() * runExistingAccount.length)];
             // adsId: accountId.trim(),
-            session.current.ads = selectedAccount.adsId;
+            session.current.ads = selectedAccount.id;
             return { ok: true };
         } else {
             const result = await addNewAccountButtonClick({ page, offer, emailToWorkWith, session });
@@ -517,4 +572,6 @@ async function selectCountryOnRegistration({ page }) {
 
 module.exports = {
     addNewAdsAccount,
+    selectAdsAccountToWorkWith,
+    createAdsAccountInExpertMode,
 };

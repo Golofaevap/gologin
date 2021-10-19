@@ -1,7 +1,7 @@
 const puppeteer = require("puppeteer-core");
 const GoLogin = require("gologin");
 const { fillPayNewForm, openSettings } = require("./functions/pay.google.com");
-const { addNewAdsAccount } = require("./functions/ads.google.com");
+const { addNewAdsAccount, createAdsAccountInExpertMode } = require("./functions/ads.google.com");
 
 const path = require("path");
 const fs = require("fs");
@@ -13,8 +13,15 @@ const {
     readSession,
     jsCopy,
     selectEmailInAccountToWorkWith,
+    deBug,
 } = require("./utils");
-const { openPaySettings, enrichTasksWithFunctions, createPHAdsAccount } = require("./tasks");
+const {
+    openPaySettings,
+    enrichTasksWithFunctions,
+    createPHAdsAccount,
+    selecAdsAccountToWork,
+    createAdsAccountinExpertMode_taskCreator,
+} = require("./tasks");
 var prompt = require("syncprompt");
 const phScenario = require("./scenarios/ph-auto");
 // console.log(fillPayNewForm);
@@ -23,7 +30,14 @@ const phScenario = require("./scenarios/ph-auto");
 async function fillSessionWithFunctions(session) {
     const taskOpenPaySettings = await openPaySettings();
     const taskCreatePHAdsAccount = await createPHAdsAccount();
-    session.funcs = { taskOpenPaySettings, taskCreatePHAdsAccount };
+    const taskSelecAdsAccountToWork = await selecAdsAccountToWork();
+    const taskCreateAccountInExperMode = await createAdsAccountinExpertMode_taskCreator();
+    session.funcs = {
+        taskOpenPaySettings,
+        taskCreatePHAdsAccount,
+        taskSelecAdsAccountToWork,
+        taskCreateAccountInExperMode,
+    };
 }
 // ----------------------------------------------------
 // ----------------------------------------------------
@@ -104,6 +118,7 @@ async function createStepsForGmailAccount(emailToWorkWith, session) {
     // gmail is known ----- -------
     // console.log(session, "\n\n\n\n")
     if (!session.userEmails[session.current.gmail].isCardAdded) {
+        deBug(`if (!session.userEmails[session.current.gmail].isCardAdded) {`);
         let result = await executeTask(
             session.funcs["taskOpenPaySettings"],
             { page, emailToWorkWith, session },
@@ -112,50 +127,59 @@ async function createStepsForGmailAccount(emailToWorkWith, session) {
         );
         result.funcName = session.funcs["taskOpenPaySettings"].name;
         if (!result.completed) {
-            session.save();
+            session.save(session);
             await browser.close();
             await GL2.stop();
             return;
         }
         session.userEmails[session.current.gmail].isCardAdded = true;
-        session.save();
+        session.save(session);
     }
 
     // card added into selected gmail here;
     if (!session.current.ads) {
         let result = await executeTask(
-            session.funcs["selectAdsAccount"],
+            session.funcs["taskSelecAdsAccountToWork"],
             { page, emailToWorkWith, session },
             jsCopy(att),
             page
         );
-        result.funcName = session.funcs["taskOpenPaySettings"].name;
+        result.funcName = session.funcs["taskSelecAdsAccountToWork"].name;
         if (!result.completed) {
-            session.save();
+            session.save(session);
             await browser.close();
             await GL2.stop();
             return;
         }
-        session.userEmails[session.current.gmail].isCardAdded = true;
-        session.save();
+        // session.userEmails[session.current.gmail].isCardAdded = true;
+        // session.save(session);
     }
 
-    if (session.userEmails[session.current.gmail].adsAccounts) {
+    // console.log("\n\n\nsession after ads account found", session)
+
+    if (!session.userEmails[session.current.gmail].adsAccounts[session.current.ads].accountExpertModeCreated) {
         let result = await executeTask(
-            session.funcs["taskOpenPaySettings"],
+            session.funcs["taskCreateAccountInExperMode"],
             { page, emailToWorkWith, session },
             jsCopy(att),
             page
         );
-        result.funcName = session.funcs["taskOpenPaySettings"].name;
+        result.funcName = session.funcs["taskCreateAccountInExperMode"].name;
         if (!result.completed) {
-            session.save();
+            session.save(session);
             await browser.close();
             await GL2.stop();
             return;
         }
-        session.userEmails[session.current.gmail].isCardAdded = true;
-        session.save();
+        session.userEmails[session.current.gmail].adsAccounts[session.current.ads].accountExpertModeCreated = true;
+        session.save(session);
+    } else {
+        console.log("PROBLEM OPPEN ADS ACCOUNT");
+        console.log(session.current.gmail, session.current.ads);
+        await browser.close();
+        await GL2.uploadProfileCookiesToServer();
+        await GL2.stop();
+        return console.log("PROBLEM OPPEN ADS ACCOUNT");
     }
 
     // // console.log(taskOpenPaySettings);
