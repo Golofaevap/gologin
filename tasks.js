@@ -2,7 +2,14 @@ const { createTask } = require("./utils");
 // -------------------------------------------------------------------------------------
 
 const { fillPayNewForm, openSettings } = require("./functions/pay.google.com");
-const { addNewAdsAccount, selectAdsAccountToWorkWith, createAdsAccountInExpertMode } = require("./functions/ads.google.com");
+const {
+    addNewAdsAccount,
+    selectAdsAccountToWorkWith,
+    createAdsAccountInExpertMode,
+    setupBilling,
+    insertScript,
+    runScript,
+} = require("./functions/ads.google.com");
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------
@@ -55,6 +62,43 @@ const createAdsAccountinExpertMode_taskCreator = async () => {
     ];
     return await createTask(createAdsAccountInExpertMode, descs, url, name);
 };
+const taskSetupBillingInAdsAccount_taskCreator = async () => {
+    const name = "setupBillingInAdsAccount";
+    const url = "https://ads.google.com/selectaccount?hl=en";
+    const descs = [
+        "Setup billing with philippines payment profile",
+        "Manual execution: ",
+        " -- Open billing summaty ",
+        " -- select Philippines Country",
+        " -- select added earlier card",
+        " -- save setup",
+    ];
+    return await createTask(setupBilling, descs, url, name);
+};
+const taskScriptAddedInAdsAccount_creator = async () => {
+    const name = "taskScriptAddedInAdsAccount";
+    const url = "https://ads.google.com/selectaccount?hl=en";
+    const descs = [
+        "Insert script to execute in account and save it",
+        "Manual execution: ",
+        " -- Open script manager ",
+        " -- create new script",
+        " -- insert code",
+        " -- save script ",
+    ];
+    return await createTask(insertScript, descs, url, name);
+};
+const taskScriptLaunchedInAdsAccount_creator = async () => {
+    const name = "taskScriptLaunchedInAdsAccount";
+    const url = "https://ads.google.com/selectaccount?hl=en";
+    const descs = [
+        "Setup script schedule",
+        "Manual execution: ",
+        " -- Open script manager ",
+        " -- setup schedule for our script 'Hourly'",
+    ];
+    return await createTask(runScript, descs, url, name);
+};
 
 async function enrichTasksWithFunctions(steps, session) {
     session.funcs = {};
@@ -72,12 +116,13 @@ async function enrichTasksWithFunctions(steps, session) {
     }
 }
 
-
-
 module.exports = {
     openPaySettings,
     createPHAdsAccount,
     enrichTasksWithFunctions,
     selecAdsAccountToWork,
-    createAdsAccountinExpertMode_taskCreator
+    createAdsAccountinExpertMode_taskCreator,
+    taskSetupBillingInAdsAccount_taskCreator,
+    taskScriptAddedInAdsAccount_creator,
+    taskScriptLaunchedInAdsAccount_creator,
 };

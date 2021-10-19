@@ -30,7 +30,7 @@ async function createAdsAccountInExpertMode({ page, offer, emailToWorkWith, sess
     await page.waitForTimeout(5000);
     const urlToOpenExpertMode = await page.url();
     const tail = urlToOpenExpertMode.split("?")[1];
-    await page.goto("https://ads.google.com/aw/campaigns/new?hl=en" + tail);
+    await page.goto("https://ads.google.com/aw/campaigns/new?hl=en&" + tail);
     session.userEmails[session.current.gmail].adsAccounts[session.current.ads].inWork = true;
     session.userEmails[session.current.gmail].adsAccounts[session.current.ads].tail = tail;
     session.save(session);
@@ -229,9 +229,12 @@ async function selectAccountToWorkWith_PROTO() {
 
 // ================================================================================
 // ================================================================================
-async function runScript({ page }) {
+async function runScript({ page, session }) {
+    deBug("async function runScript ....");
     const currUrl = await page.url();
-    await page.goto("https://ads.google.com/aw/bulk/scripts/management?hl=en&" + currUrl.split("?")[1]);
+    const tail = session.userEmails[session.current.gmail].adsAccounts[session.current.ads].tail.split("&mode=")[0];
+
+    await page.goto("https://ads.google.com/aw/bulk/scripts/management?hl=en&" + tail);
     await page.waitForTimeout(15000);
 
     const rowsWithScripts = await page.$$('div[role="row"]');
@@ -250,45 +253,98 @@ async function runScript({ page }) {
             }
         });
 
-        const itemsFromMenu = await page.$$('material-list-item[role="listitem"]');
+        await page.waitForTimeout(5000);
+
+        const mainContainer = await page.$('div[id="base-root-overlay-container-BULK"]');
+        // deBug("mainContainer.length:", mainContainer.length);
+        const listFromMenu = mainContainer.$$("material-list");
+        deBug("listFromMenu.length:", listFromMenu.length);
+        const itemsFromMenu = await mainContainer.$$('[role="listitem"]'); // [role="listitem"][class*="item"]
+        deBug("itemsFromMenu.length:", itemsFromMenu.length);
+
         for (let item of itemsFromMenu) {
             const innerText = await item.evaluate((el) => el.innerText);
+            console.log(innerText);
             if (innerText.includes("ourly")) {
                 item.click();
                 break;
             }
         }
-    }
-    return;
-
-    let scriptOpenned = false;
-    if (createdScriptLinks) {
-        for (let link of createdScriptLinks) {
-            try {
-                await link.click();
-                scriptOpenned = true;
-                const url = await page.url();
-                await page.waitForTimeout(5000);
-                if (!url.includes("edit")) {
-                    throw "Url does not changed";
-                }
-                break;
-            } catch (e) {
-                console.log("scriptOpenned3", scriptOpenned);
-                scriptOpenned = false;
-                continue;
+        await page.waitForTimeout(5000);
+        // const divPresentation = await page.$('div[role="presentation"]');
+        const saveClickButton = await page.$$('material-button[class*="btn-yes"][role="button"]'); // [role="listitem"][class*="item"]
+        console.log("saveClickButton.length:", saveClickButton.length);
+        for (let btn of saveClickButton) {
+            const innerText = await btn.evaluate((el) => el.innerText);
+            if (innerText.trim().toLowerCase() === "save") {
+                await btn.click();
             }
-            // if(scriptOpenned) break;
         }
-    } else {
-        console.log("scriptOpenned2", scriptOpenned);
-        scriptOpenned = false;
+
+        await page.waitForTimeout(5000);
+
+        const modalWindow = await page.$('material-dialog[class*="simple-dialog"]');
+        if (modalWindow) {
+            const newPagePromise = new Promise((x) => page.once("popup", x));
+            const authBtns = await modalWindow.$('material-button[class*="auth-button"]');
+            await authBtns.click();
+
+            const newPage = await newPagePromise; // declare new tab /window,
+
+            await newPage.waitForTimeout(5000);
+            try {
+                for (let i = 0; i < 5; i++) {
+                    try {
+                        const emailToAllow = await newPage.waitForSelector(
+                            `div[data-identifier="${session.current.gmail}"]`
+                        );
+                        await emailToAllow.click();
+                        await newPage.waitForTimeout(10000);
+                        const submitAllow = await newPage.waitForSelector('div[id="submit_approve_access"]');
+                        await submitAllow.click();
+                    } catch (error) {
+                        console.log(error);
+                        console.log("NON CRITICAL");
+                        await newPage.reload({ waitUntil: ["networkidle0", "domcontentloaded"] });
+                        await newPage.waitForTimeout(10000);
+                    }
+                }
+            } catch (error) {}
+            try {
+                await newPage.waitForTimeout(10000);
+                await newPage.close();
+            } catch (error) {
+                console.log(error);
+            }
+
+            await page.waitForTimeout(5000);
+        }
+        const saveClickButton2 = await page.$$('material-button[class*="btn-yes"][role="button"]'); // [role="listitem"][class*="item"]
+        console.log("saveClickButton.length:", saveClickButton2.length);
+        for (let btn of saveClickButton2) {
+            const innerText = await btn.evaluate((el) => el.innerText);
+            if (innerText.trim().toLowerCase() === "save") {
+                try {
+                    await btn.click();
+                    await page.waitForTimeout(1233);
+                    break;
+                } catch (error) {
+                    console.log("SOME STUPID ERROR");
+                    console.log(error);
+                }
+            }
+        }
     }
+
+    return { ok: true, message: "script is run" };
 }
 
-async function insertScript({ page }) {
+async function insertScript({ page, session }) {
+    deBug("async function insertScript ....");
     const currUrl = await page.url();
-    await page.goto("https://ads.google.com/aw/bulk/scripts/management?hl=en&" + currUrl.split("?")[1]);
+    const tail = session.userEmails[session.current.gmail].adsAccounts[session.current.ads].tail.split("&mode=")[0];
+
+    await page.goto("https://ads.google.com/aw/bulk/scripts/management?hl=en&" + tail);
     await page.waitForTimeout(15000);
 
     const createdScriptLinks = await page.$$("a.script-name-link");
@@ -355,11 +411,14 @@ async function insertScript({ page }) {
     await page.waitForTimeout(15000);
     await page.goto("https://ads.google.com/aw/bulk/scripts/management?hl=en&" + currUrl.split("?")[1]);
     await page.waitForTimeout(15000);
+
+    return { ok: true, message: "message script is inserted" };
 }
 
-async function setupBilling({ page }) {
-    const currUrl = await page.url();
-    await page.goto("https://ads.google.com/aw/billing/signup?hl=en&" + currUrl.split("?")[1]);
+async function setupBilling({ page, session }) {
+    // const currUrl = await page.url();
+    const tail = session.userEmails[session.current.gmail].adsAccounts[session.current.ads].tail.split("&mode=")[0];
+    await page.goto("https://ads.google.com/aw/billing/signup?hl=en&" + tail);
     await page.waitForTimeout(15000);
 
     const frameHandle = await page.$$("iframe");
@@ -385,14 +444,27 @@ async function setupBilling({ page }) {
 
     await page.waitForTimeout(1500);
     // const checkBoxs = await iFrame.$$('div[class*="b3-checkbox-check-container"]');
-    const precheckBox = await iFrame.$('div[class*="b3-legal-message-explicit-document"]');
-    // console.log(await precheckBox.getProperty(innerText));
-    await precheckBox.click();
+    try {
+        const precheckBox = await iFrame.$('div[class*="b3-legal-message-explicit-document"]');
+        // console.log(await precheckBox.getProperty(innerText));
+        await precheckBox.click();
+    } catch (e) {
+        console.log(e);
+        console.log(" NON CRITICAL ");
+    }
     // return;
     await page.waitForTimeout(1500);
 
     const saveButton = await page.$('material-button[class*="saveButton"]');
     await saveButton.click();
+
+    await page.waitForTimeout(10000);
+    const urlAfterSave = await page.url();
+    if (urlAfterSave.includes("billing/signup")) {
+        throw "Problem to save billing settings";
+    }
+
+    return { ok: true, message: "billing setup" };
 }
 // ================================================================================
 // ================================================================================
@@ -574,4 +646,7 @@ module.exports = {
     addNewAdsAccount,
     selectAdsAccountToWorkWith,
     createAdsAccountInExpertMode,
+    setupBilling,
+    insertScript,
+    runScript,
 };

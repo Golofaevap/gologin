@@ -21,6 +21,9 @@ const {
     createPHAdsAccount,
     selecAdsAccountToWork,
     createAdsAccountinExpertMode_taskCreator,
+    taskSetupBillingInAdsAccount_taskCreator,
+    taskScriptAddedInAdsAccount_creator,
+    taskScriptLaunchedInAdsAccount_creator,
 } = require("./tasks");
 var prompt = require("syncprompt");
 const phScenario = require("./scenarios/ph-auto");
@@ -32,11 +35,17 @@ async function fillSessionWithFunctions(session) {
     const taskCreatePHAdsAccount = await createPHAdsAccount();
     const taskSelecAdsAccountToWork = await selecAdsAccountToWork();
     const taskCreateAccountInExperMode = await createAdsAccountinExpertMode_taskCreator();
+    const taskSetupBillingInAdsAccount = await taskSetupBillingInAdsAccount_taskCreator();
+    const taskScriptAddedInAdsAccount = await taskScriptAddedInAdsAccount_creator();
+    const taskScriptLaunchedInAdsAccount = await taskScriptLaunchedInAdsAccount_creator();
     session.funcs = {
         taskOpenPaySettings,
         taskCreatePHAdsAccount,
         taskSelecAdsAccountToWork,
         taskCreateAccountInExperMode,
+        taskSetupBillingInAdsAccount,
+        taskScriptAddedInAdsAccount,
+        taskScriptLaunchedInAdsAccount,
     };
 }
 // ----------------------------------------------------
@@ -137,6 +146,7 @@ async function createStepsForGmailAccount(emailToWorkWith, session) {
     }
 
     // card added into selected gmail here;
+    // session.current.ads = "382-203-7656"; // временно
     if (!session.current.ads) {
         let result = await executeTask(
             session.funcs["taskSelecAdsAccountToWork"],
@@ -155,7 +165,7 @@ async function createStepsForGmailAccount(emailToWorkWith, session) {
         // session.save(session);
     }
 
-    // console.log("\n\n\nsession after ads account found", session)
+    // console.log("\n\n\nsession after ads account found", session.current, session.userEmails[session.current.gmail]);
 
     if (!session.userEmails[session.current.gmail].adsAccounts[session.current.ads].accountExpertModeCreated) {
         let result = await executeTask(
@@ -173,58 +183,85 @@ async function createStepsForGmailAccount(emailToWorkWith, session) {
         }
         session.userEmails[session.current.gmail].adsAccounts[session.current.ads].accountExpertModeCreated = true;
         session.save(session);
-    } else {
-        console.log("PROBLEM OPPEN ADS ACCOUNT");
-        console.log(session.current.gmail, session.current.ads);
-        await browser.close();
-        await GL2.uploadProfileCookiesToServer();
-        await GL2.stop();
-        return console.log("PROBLEM OPPEN ADS ACCOUNT");
+    }
+    // else {
+    //     console.log("PROBLEM OPPEN ADS ACCOUNT");
+    //     console.log(session.current.gmail, session.current.ads);
+    //     await browser.close();
+    //     await GL2.uploadProfileCookiesToServer();
+    //     await GL2.stop();
+    //     return console.log("PROBLEM OPPEN ADS ACCOUNT");
+    // }
+
+    if (!session.userEmails[session.current.gmail].adsAccounts[session.current.ads].billingSetup) {
+        let result = await executeTask(
+            session.funcs["taskSetupBillingInAdsAccount"],
+            { page, emailToWorkWith, session },
+            jsCopy(att),
+            page
+        );
+        result.funcName = session.funcs["taskSetupBillingInAdsAccount"].name;
+        if (!result.completed) {
+            session.save(session);
+            await browser.close();
+            await GL2.stop();
+            return;
+        }
+        session.userEmails[session.current.gmail].adsAccounts[session.current.ads].billingSetup = true;
+        session.save(session);
+    }
+    // else {
+    //     console.log("PROBLEM OPPEN ADS ACCOUNT");
+    //     console.log(session.current.gmail, session.current.ads);
+    //     await browser.close();
+    //     await GL2.uploadProfileCookiesToServer();
+    //     await GL2.stop();
+    //     return console.log("PROBLEM OPPEN ADS ACCOUNT");
+    // }
+    if (!session.userEmails[session.current.gmail].adsAccounts[session.current.ads].scriptAdded) {
+        let result = await executeTask(
+            session.funcs["taskScriptAddedInAdsAccount"],
+            { page, emailToWorkWith, session },
+            jsCopy(att),
+            page
+        );
+        result.funcName = session.funcs["taskScriptAddedInAdsAccount"].name;
+        if (!result.completed) {
+            session.save(session);
+            await browser.close();
+            await GL2.stop();
+            return;
+        }
+        session.userEmails[session.current.gmail].adsAccounts[session.current.ads].scriptAdded = true;
+        session.save(session);
+    }
+    // else {
+    //     console.log("PROBLEM OPPEN ADS ACCOUNT");
+    //     console.log(session.current.gmail, session.current.ads);
+    //     await browser.close();
+    //     await GL2.uploadProfileCookiesToServer();
+    //     await GL2.stop();
+    //     return console.log("PROBLEM OPPEN ADS ACCOUNT");
+    // }
+
+    if (!session.userEmails[session.current.gmail].adsAccounts[session.current.ads].scriptLaunched) {
+        let result = await executeTask(
+            session.funcs["taskScriptLaunchedInAdsAccount"],
+            { page, emailToWorkWith, session },
+            jsCopy(att),
+            page
+        );
+        result.funcName = session.funcs["taskScriptLaunchedInAdsAccount"].name;
+        if (!result.completed) {
+            session.save(session);
+            await browser.close();
+            await GL2.stop();
+            return;
+        }
+        session.userEmails[session.current.gmail].adsAccounts[session.current.ads].scriptLaunched = true;
+        session.save(session);
     }
 
-    // // console.log(taskOpenPaySettings);
-    // for (let i in emailToWorkWith.steps) {
-    //     if (!emailToWorkWith.steps[i].completed) {
-    //         console.log(emailToWorkWith.steps[i].name, " ... ");
-    //         let result = await executeTask(
-    //             emailToWorkWith.steps[i],
-    //             { page, emailToWorkWith, session },
-    //             jsCopy(att),
-    //             page
-    //         );
-    //         result.funcName = emailToWorkWith.steps[i].name;
-    //         emailToWorkWith.history.push(result);
-    //         if (!result.completed) {
-    //             fs.writeFileSync(`./sessions/${session.profileId}.json`, JSON.stringify(session));
-    //             await browser.close();
-    //             await GL2.stop();
-    //             return;
-    //         }
-    //         emailToWorkWith.steps[i].completed = true;
-    //         console.log(emailToWorkWith.steps[i].name, emailToWorkWith.steps[i].completed);
-    //         fs.writeFileSync(`./sessions/${session.profileId}.json`, JSON.stringify(session));
-    //     }
-    // }
-    // let cardsAttempt = 111;
-    // while (cardsAttempt < 10) {
-    //     cardsAttempt++;
-    //     const result2 = await openSettings({ page, card: card[cardsAttempt] });
-    //     console.log(result2);
-    //     if (result2.ok) {
-    //         break;
-    //     }
-    // }
-
-    // await fillPayNewForm({ page, card });
-
-    // console.log("second:", session);
-
-    // for (let gmAccIter in session.userEmails) {
-    //     const gmailAccount = session.userEmails[gmAccIter];
-    //     if (gmailAccount.isSingout) continue;
-    //     if (gmailAccount.isUsed) continue;
-    //     await addNewAdsAccount({ page, offer: null, gmailAccount, session });
-    // }
     console.log("EXECUTION COMPLETED");
 
     // console.log(await page.content());
