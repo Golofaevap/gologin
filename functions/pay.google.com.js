@@ -292,7 +292,8 @@ async function addCardToExistingProfile({ page }) {
         console.log("error in url to continue work", "addCardToExistingProfile");
         return;
     }
-
+    const doesCardExist = await page.$$('div[class="b3-payment-methods-card"]');
+    if (doesCardExist.length) return { ok: true, message: "CARD IS ALREADY ADDED" };
     await startAddingNewCard({ page });
     await page.waitForTimeout(13000);
 

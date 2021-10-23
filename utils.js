@@ -1,5 +1,7 @@
 var prompt = require("syncprompt");
 const fs = require("fs");
+const { default: axios } = require("axios");
+// import fetch from "node-fetch";
 
 function deBug(...rest) {
     const degug = true;
@@ -398,10 +400,36 @@ async function getNewCard() {
         },
     ];
 
+    const url =
+        "https://script.google.com/macros/s/AKfycbws9dEanz3h2Wu4EU00tknmbbk7qq6YIsdv1KM5Phj5ht7YFm6QGO6G2lMry1974buN/exec";
+
+    // const response = await fetch(url);
+    const response = await axios({
+        method: "GET",
+        url: url,
+    });
+    console.log(response.status);
+    const json = await response.data;
+    if (json.ok) {
+        return json.card;
+    }
+
     return card[Math.floor(Math.random() * card.length)];
 }
 
 async function getCardHolder() {
+    const url =
+        "https://script.google.com/macros/s/AKfycbyR6PkCwnrFkg7qnPxR8LK_X5i7PU-aIKa080LSTIuZK5iEeGEAM9XIPBHXY4Y8qAbRTw/exec";
+
+    // const response = await fetch(url);
+    const response = await axios({
+        method: "GET",
+        url: url,
+    });
+    const json = await response.data;
+    if (json.ok) {
+        return json.user;
+    }
     return {
         address: "some street 1",
         city: "some city",
