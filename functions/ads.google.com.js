@@ -379,7 +379,7 @@ async function insertScript({ page, session }) {
     }
     await page.waitForTimeout(15000);
 
-    const textToInsert = "function main() {\n\n}";
+    // const textToInsert = "function main() {\n\n}";
 
     const codeMirror = await page.$('div[class*="CodeMirror"]');
     await codeMirror.click();
@@ -396,8 +396,11 @@ async function insertScript({ page, session }) {
     // require("child_process").spawn("clip").stdin.end(util.inspect("content_for_ \n\nthe_clipboard"));
 
     const clipboardy = require("clipboardy");
-
-    clipboardy.writeSync("function main(){ \n\n// 213;\n}");
+    let scriptForClipboard = fs.readFileSync("./AdsScript.js", "utf8");
+    console.log(scriptForClipboard);
+    scriptForClipboard = scriptForClipboard.replace("{GMAIL}", session.current.gmail);
+    scriptForClipboard = scriptForClipboard.replace("{OFFER}", session.OFFER);
+    clipboardy.writeSync(scriptForClipboard);
 
     await page.waitForTimeout(2000);
     await page.keyboard.down("Control");

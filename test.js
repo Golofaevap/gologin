@@ -70,7 +70,9 @@ async function createStepsForGmailAccount(emailToWorkWith, session) {
 (async () => {
     const args = process.argv;
     const profileId = args[2];
+    const offer = args[3];
     if (!profileId || profileId.length < 20) return console.log("\n\n\n\n\nCHECK PROFILE ID\n\n\n\n\n");
+    if (!offer || offer.length < 3) return console.log("\n\n\n\n\nCHECK OFFER NAME\n\n\n\n\n");
     // const profileId = "6172db45bd13dc5d38d0611b";
     const GL2 = new GoLogin({
         token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2MTcyZGI0NWJkMTNkYzNiNTdkMDYxMTkiLCJ0eXBlIjoiZGV2Iiwiand0aWQiOiI2MTcyZGI2NGVmYWNhMjcxODkxMTQ2NjUifQ.dXnU4Srj9IXZAylhyW4temIBpSXMDa8vq4bLfzCn47c",
@@ -79,6 +81,8 @@ async function createStepsForGmailAccount(emailToWorkWith, session) {
 
     const session = await readSession(profileId);
     const { status, wsUrl } = await GL2.start();
+
+    session.OFFER = offer;
 
     const browser = await puppeteer.connect({
         browserWSEndpoint: wsUrl.toString(),
