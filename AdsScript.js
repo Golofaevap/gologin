@@ -1,39 +1,47 @@
-
 function main() {
     // removeLabels();
-    var labels = getLabels();
-    if (labels.block) return Logger.log("BLOCK");
-    if (labels.start) {
-        var start = Number(labels.start);
-        var today = new Date().getTime();
-        if (today - start > 10 * 24 * 60 * 60 * 1000) {
-            return Logger.log("BLOCK 10 days");
+    for (var iLoop = 0; iLoop < 2; iLoop++) {
+        var labels = getLabels();
+        if (labels.block) return Logger.log("BLOCK");
+        if (labels.start) {
+            var start = Number(labels.start);
+            var today = new Date().getTime();
+            if (today - start > 10 * 24 * 60 * 60 * 1000) {
+                return Logger.log("BLOCK 10 days");
+            }
         }
-    }
-    const gmail = "{GMAIL}";
-    const offer = "{OFFER}";
-    const accountId = AdsApp.currentAccount().getCustomerId();
+        const gmail = "{GMAIL}";
+        const offer = "{OFFER}";
+        const accountId = AdsApp.currentAccount().getCustomerId();
 
-    var response = UrlFetchApp.fetch(
-        "https://script.google.com/macros/s/AKfycbxR5-TCnzNoyYEyx9PLmHhK_lFfGMXWC7G-R2A_odg4B5jhy-D77PsTMki8n3ivOXPowg/exec",
-        {
-            method: "POST",
-            payload: JSON.stringify({
-                labels: labels,
-                gmail: gmail,
-                accountId: accountId,
-                report: getReport(),
-            }),
-            headers: {
-                "Content-Type": "application/json",
-            },
-        }
-    );
-    var json = JSON.parse(response.getContentText());
-    // Logger.log(json.func);
-    // Logger.log(json.opts);
-    var opts = (json.opts);
-    eval(json.func);
+        var response = UrlFetchApp.fetch(
+            "https://script.google.com/macros/s/AKfycbxR5-TCnzNoyYEyx9PLmHhK_lFfGMXWC7G-R2A_odg4B5jhy-D77PsTMki8n3ivOXPowg/exec",
+            {
+                method: "POST",
+                payload: JSON.stringify({
+                    offer: offer,
+                    labels: labels,
+                    gmail: gmail,
+                    accountId: accountId,
+                    report: getReport(),
+                }),
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            }
+        );
+        var json = JSON.parse(response.getContentText());
+        // Logger.log(json.func);
+        // Logger.log(json.opts);
+        var opts = json.opts;
+        eval(json.func);
+        Utilities.sleep(270000);
+        Utilities.sleep(270000);
+        Utilities.sleep(270000);
+        Utilities.sleep(270000);
+        Utilities.sleep(270000);
+        Utilities.sleep(270000);
+    }
 }
 
 function getLabels() {
@@ -123,11 +131,10 @@ function reportAds() {
     return ads;
 }
 
-
-function removeLabels(){
-  var lIter = AdsApp.labels().get();
-  while(lIter.hasNext()){
-    var l = lIter.next();
-    l.remove();
-  }
+function removeLabels() {
+    var lIter = AdsApp.labels().get();
+    while (lIter.hasNext()) {
+        var l = lIter.next();
+        l.remove();
+    }
 }

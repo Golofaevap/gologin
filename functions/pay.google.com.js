@@ -34,20 +34,26 @@ async function fillPayNewForm({ page, emailToWorkWith }) {
     }
     const frameHandle = await page.waitForSelector("iframe");
     const iFrame = await frameHandle.contentFrame();
+    await page.waitForTimeout(2000);
 
     // const iFrame = page.frames().find((el) => true);
     // console.log(iFrame);
     // await iFrame.evaluate((el) => console.log(el.innerText));
     const regionSelector = await iFrame.$('div[class="b3-collapsing-form-placeholder-text"]');
-    if (regionSelector) {
+    try {
         await regionSelector.click();
-    } else {
-        const regionSelector2 = await iFrame.$('div[class="b3-collapsing-form-summary-text"]');
+        await page.waitForTimeout(2000);
+    } catch (e) {
+        console.log(e);
+        console.log("\n\n\nCATCH =======================");
+        const regionSelector2 = await iFrame.$('div[class*="b3-collapsing-form-summary-text"]');
         await regionSelector2.click();
+        await page.waitForTimeout(2000);
     }
+    await page.waitForTimeout(2000);
 
     await page.waitForTimeout(2000);
-    const countrySelectorOpent = await iFrame.$('span[class*="countryselector-flag"]');
+    const countrySelectorOpent = await iFrame.$('span[class*="countryselector"]');
     await countrySelectorOpent.click();
     await page.waitForTimeout(2000);
 
@@ -178,7 +184,8 @@ async function fillOutFormForSecondProfile({ page, card }) {
     await page.waitForTimeout(1000);
     const cardHolder = await getCardHolder();
     // console.log("cardHolder:", cardHolder);
-    const nameInput = await iFrame.$('input[name="RECIPIENT"]');
+    const nameInput = await iFrame.$('input[name="RECIPIENT"][autocomplete="name"]');
+    await page.waitForTimeout(1000);
     await nameInput.click({ clickCount: 3 });
     await nameInput.type(cardHolder.name, { delay: 120 });
     await page.waitForTimeout(1000);
@@ -297,7 +304,12 @@ async function addCardToExistingProfile({ page }) {
         console.log("error in url to continue work", "addCardToExistingProfile");
         return;
     }
-    const doesCardExist = await page.$$('div[class="b3-payment-methods-card"]');
+    const frameHandle = await page.$$("iframe");
+    // console.log("frameHandle.length", frameHandle.length);
+    const iFrame = await frameHandle[frameHandle.length - 1].contentFrame();
+
+    const doesCardExist = await iFrame.$$('div[class="b3-payment-methods-card"]');
+    console.log("doesCardExist: ", doesCardExist.length)
     if (doesCardExist.length) return { ok: true, message: "CARD IS ALREADY ADDED" };
     await startAddingNewCard({ page });
     await page.waitForTimeout(13000);
