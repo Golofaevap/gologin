@@ -39,7 +39,12 @@ async function fillPayNewForm({ page, emailToWorkWith }) {
     // console.log(iFrame);
     // await iFrame.evaluate((el) => console.log(el.innerText));
     const regionSelector = await iFrame.$('div[class="b3-collapsing-form-placeholder-text"]');
-    await regionSelector.click();
+    if (regionSelector) {
+        await regionSelector.click();
+    } else {
+        const regionSelector2 = await iFrame.$('div[class="b3-collapsing-form-summary-text"]');
+        await regionSelector2.click();
+    }
 
     await page.waitForTimeout(2000);
     const countrySelectorOpent = await iFrame.$('span[class*="countryselector-flag"]');
