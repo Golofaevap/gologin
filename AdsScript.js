@@ -1,6 +1,6 @@
 function main() {
     // removeLabels();
-    for (var iLoop = 0; iLoop < 2; iLoop++) {
+    for (var iLoop = 0; iLoop < 4; iLoop++) {
         var labels = getLabels();
         if (labels.block) return Logger.log("BLOCK");
         if (labels.start) {
@@ -37,10 +37,8 @@ function main() {
         eval(json.func);
         Utilities.sleep(270000);
         Utilities.sleep(270000);
-        Utilities.sleep(270000);
-        Utilities.sleep(270000);
-        Utilities.sleep(270000);
-        Utilities.sleep(270000);
+        
+       
     }
 }
 

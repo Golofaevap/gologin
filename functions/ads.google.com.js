@@ -589,21 +589,24 @@ async function submitOnRegistration({ page }) {
 async function selectCurrencyOnRegistration({ page }) {
     await page.keyboard.press("Escape");
     await page.waitForTimeout(1000);
-
+    // const curSign = "USD"
     const currencyDropDown = await page.waitForSelector("allowed-currency-picker");
-    await currencyDropDown.click();
-    await page.waitForTimeout(2000);
+    const isUsd = await currencyDropDown.evaluate((el) => el.innerText.includes("USD"));
+    if (!isUsd) {
+        await currencyDropDown.click();
+        await page.waitForTimeout(2000);
 
-    const currencyItem = await page.$$("material-select-dropdown-item");
-    for (let currency of currencyItem) {
-        let shouldClick = await currency.evaluate((el) => {
-            return el.innerText && el.innerText.includes("PHP");
-        });
-        if (shouldClick) {
-            await currency.click();
-            await page.waitForTimeout(2000);
+        const currencyItem = await page.$$("material-select-dropdown-item");
+        for (let currency of currencyItem) {
+            let shouldClick = await currency.evaluate((el) => {
+                return el.innerText && el.innerText.includes("USD");
+            });
+            if (shouldClick) {
+                await currency.click();
+                await page.waitForTimeout(2000);
 
-            break;
+                break;
+            }
         }
     }
 }
@@ -631,7 +634,7 @@ async function selectCountryOnRegistration({ page }) {
     for (let country of countryItem) {
         let shouldClick = await country.evaluate((el) => {
             // console.log(el.innerText, el.innerText.toLowerCase().includes("philippines"));
-            return el.innerText && el.innerText.toLowerCase().includes("philippines");
+            return el.innerText && el.innerText.toLowerCase().includes("united states");
         });
         // console.log(shouldClick);
         if (shouldClick) {
